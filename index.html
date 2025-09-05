@@ -6,18 +6,18 @@
   <title>Inscripciones – Aprobaciones</title>
   <style>
     *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;font-family:Segoe UI,Tahoma,Verdana,sans-serif}
-    .container{max-width:1400px;margin:0 auto}
+    .container{max-width:1200px;margin:0 auto}
     .card{background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.12);overflow:hidden}
     .header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px}
-    .title{font-size:20px;font-weight:700}
+    .title{font-size:22px;font-weight:800}
     .badge{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:999px;padding:6px 12px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:16px 0}
-    .stat{background:#fff;border-radius:12px;padding:16px;text-align:center}
-    .stat .n{font-size:32px;font-weight:800;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .panel{background:#fff;border-radius:16px;margin-top:16px;padding:16px}
+    .panel{background:#fff;border-radius:16px;margin:16px 0;padding:16px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    select,input,button{padding:10px;border-radius:10px;border:2px solid #e5e7eb;font-size:14px}
-    button{background:#667eea;color:#fff;border:none;cursor:pointer} button:hover{opacity:.9}
+    input,button,select{padding:10px;border-radius:10px;border:2px solid #e5e7eb;font-size:14px}
+    button{background:#6970f6;color:#fff;border:none;cursor:pointer} button:hover{opacity:.9}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .stat{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.06)}
+    .stat .n{font-size:30px;font-weight:900;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     .table{overflow:auto;border-radius:16px}
     table{width:100%;border-collapse:collapse}
     th,td{padding:12px 14px;border-bottom:1px solid #f1f5f9}
@@ -29,11 +29,11 @@
     .info{background:#e3f2fd;color:#1976d2;border-color:#bbdefb}
     .muted{background:#eee;color:#444;border-color:#ddd}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .btn-ok{background:#28a745} .btn-bad{background:#dc3545} .btn-doc{background:#ff9800} .btn-lock{background:#9e9e9e}
-    .btn-rev{background:#6b7280}
-    .note{position:fixed;right:20px;top:20px;padding:12px 16px;border-radius:10px;color:#fff;display:none;box-shadow:0 10px 20px rgba(0,0,0,.2)}
+    .btn-ok{background:#28a745} .btn-bad{background:#dc3545} .btn-doc{background:#ff9800} .btn-lock{background:#9e9e9e} .btn-rev{background:#6b7280}
+    .note{position:fixed;right:20px;top:20px;padding:12px 16px;border-radius:10px;color:#fff;display:none;box-shadow:0 10px 20px rgba(0,0,0,.2);z-index:99}
     .note.success{background:#16a34a} .note.error{background:#dc2626} .note.info{background:#0284c7}
-    @media(max-width:768px){th,td{padding:10px 8px;font-size:12px}}
+    @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:600px){.grid{grid-template-columns:1fr} th,td{font-size:12px;padding:9px}}
   </style>
 </head>
 <body>
@@ -41,7 +41,7 @@
     <div class="card">
       <div class="header">
         <div class="title">🎓 Inscripciones – Aprobaciones</div>
-        <div class="badge" id="userBadge">Invitado</div>
+        <div class="badge" id="userBadge">Operador</div>
       </div>
 
       <!-- Config -->
@@ -53,7 +53,7 @@
           <button id="sync">Sincronizar</button>
           <button id="clearCache">Limpiar caché local</button>
         </div>
-        <small style="color:#6b7280">Producción: esta app actualiza por <b>proxy</b> para evitar CORS.</small>
+        <small style="color:#6b7280">Producción: esta app actualiza <b>por proxy</b> para evitar CORS.</small>
       </div>
 
       <!-- Stats -->
@@ -79,14 +79,12 @@
       <div class="panel table">
         <table>
           <thead>
-            <tr>
-              <th>Nombre</th><th>Documento</th><th>Grado</th><th>Sede</th><th>Jornada</th>
-              <th>Estados</th><th>Acciones</th>
-            </tr>
+          <tr>
+            <th>Nombre</th><th>Documento</th><th>Grado</th><th>Sede</th><th>Jornada</th>
+            <th>Estados</th><th>Acciones</th>
+          </tr>
           </thead>
-          <tbody id="tbody">
-            <tr><td colspan="7" style="text-align:center">Sin datos</td></tr>
-          </tbody>
+          <tbody id="tbody"><tr><td colspan="7" style="text-align:center">Sin datos</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -95,22 +93,22 @@
   <div id="note" class="note"></div>
 
   <script>
-    // ============== CONFIG DEL FRONT ==============
-    const PROXY_URL = 'https://TU-PROYECTO.vercel.app/api/jotform/update'; // TODO: pon tu URL de Vercel
-    const PROXY_TOKEN = '12345-seguro'; // TODO: si usaste PROXY_SECRET en Vercel
+    // ============ CONFIG ============
+    // Cambia estos dos si tu dominio/secreto son distintos en Vercel:
+    const PROXY_URL   = 'https://aprobaciones-jotform.vercel.app/api/jotform/update';
+    const PROXY_TOKEN = '12345-seguro'; // debe coincidir con PROXY_SECRET de Vercel (si no lo usas, puedes quitar el header)
 
-    // Si tu campo “Estado de aprobación” es Dropdown, lista las opciones válidas aquí (respeta tildes/espacios).
+    // Si tu campo en JF es Dropdown, estas deben ser las opciones exactas:
     const ALLOWED_STATES = ['Pendiente','Aprobado','Rechazado','Solicitar Documentos','Bloqueado','En Progreso'];
 
-    // ==============================================
+    // ============ VARIABLES ============
     let apiKey = localStorage.getItem('jf_api') || '';
     let formId = localStorage.getItem('jf_form') || '';
     let all = [];   // dataset completo
     let view = [];  // dataset filtrado
-    let QID_ESTADO = null; // resuelto por API
 
-    // UI helpers
-    const $ = (id)=>document.getElementById(id);
+    // ============ HELPERS UI ============
+    const $ = id => document.getElementById(id);
     const note = (msg,type='info')=>{
       const n = $('note'); n.textContent = msg; n.className='note '+type; n.style.display='block'; setTimeout(()=>n.style.display='none',2500);
     };
@@ -124,7 +122,8 @@
       return 'warn';
     };
 
-    // Guardar config
+    // ============ CONFIG / STORAGE ============
+    $('apiKey').value = apiKey; $('formId').value = formId;
     $('saveCfg').onclick = ()=>{
       apiKey = $('apiKey').value.trim();
       formId = $('formId').value.trim();
@@ -132,14 +131,12 @@
       localStorage.setItem('jf_form', formId);
       note('Configuración guardada','success');
     };
-
-    // Limpia cache local (si lo usas)
     $('clearCache').onclick = ()=>{
       localStorage.removeItem('jotform_local_changes');
       note('Caché local eliminada','success');
     };
 
-    // Export CSV
+    // ============ EXPORT ============
     $('export').onclick = ()=>{
       if(view.length===0){ note('No hay datos para exportar','error'); return; }
       let csv = 'Nombre,Documento,Grado,Sede,Jornada,Estado (UI),Estado de aprobación (JF)\n';
@@ -151,73 +148,66 @@
       a.href = url; a.download = 'estudiantes.csv'; a.click();
     };
 
-    // Filtros
+    // ============ FILTROS ============
     $('busca').oninput = render;
     $('sedeF').onchange = render;
     $('gradoF').onchange = render;
     $('estadoF').onchange = render;
 
-    // Sincronizar todo (resuelve QID + trae submissions)
+    // ============ SYNC: Traer submissions ============
     $('sync').onclick = async ()=>{
       if(!apiKey || !formId){ note('Falta API Key y/o Form ID','error'); return; }
       note('Sincronizando...','info');
 
-      // 1) resolver QID del campo “Estado de aprobación”
-      QID_ESTADO = await fetchQuestionsAndGetQID(formId, apiKey, 'Estado de aprobación');
-      if(!QID_ESTADO){ note('No encontré el campo "Estado de aprobación"','error'); return; }
-      console.log('QID Estado de aprobación =>', QID_ESTADO);
-
-      // 2) traer submissions (con workflow_status por visibilidad)
+      // Traemos submissions (agregando workflow_status por si lo quieres mostrar)
       const url = `https://api.jotform.com/form/${formId}/submissions?apiKey=${apiKey}&limit=200&addWorkflowStatus=1`;
-      const r = await fetch(url);
-      const data = await r.json();
+      try{
+        const r = await fetch(url);
+        const data = await r.json();
+        if(!data?.content){ note('Sin envíos','error'); return; }
 
-      if(!data?.content){ note('Sin envíos','error'); return; }
+        const sedes = new Set();
+        all = data.content.map(sub=>{
+          const a = sub.answers || {};
+          const nombres = a['4']?.answer || a['4']?.prettyFormat || '';
+          const apellidos = a['5']?.answer || a['5']?.prettyFormat || '';
+          const sede = a['2']?.answer || '—';
+          const estadoJF = (()=>{
+            // Intentamos encontrar respuesta del campo “Estado de aprobación”.
+            // Como el QID lo resuelve el backend, aquí buscamos un label aproximado para pintar;
+            // si no aparece, dejamos vacío y se actualizará al primer cambio exitoso.
+            for(const k in a){
+              const lbl = normalize(a[k]?.text || '');
+              if(lbl.includes('estado de aprobacion')) return a[k]?.answer || '';
+            }
+            return '';
+          })();
 
-      // llenar combos de sede únicos
-      const sedes = new Set();
-      all = data.content.map(sub=>{
-        const a = sub.answers || {};
-        const nombres = a['4']?.answer || a['4']?.prettyFormat || '';
-        const apellidos = a['5']?.answer || a['5']?.prettyFormat || '';
-        const sede = a['2']?.answer || '—';
-        sedes.add(sede);
+          sedes.add(sede);
+          return {
+            submissionId: sub.id,
+            nombre: `${nombres} ${apellidos}`.trim() || 'Sin nombre',
+            documento: a['7']?.answer || 'Sin documento',
+            grado: a['8']?.answer || '1',
+            sede,
+            jornada: a['3']?.answer || '—',
+            estadoUI: estadoJF || 'Pendiente',
+            estadoJF: estadoJF || '',
+            flowStatus: sub.workflow_status || '',
+          };
+        });
 
-        const estadoJF = a[QID_ESTADO]?.answer || '';
-        const estadoUI = estadoJF || 'Pendiente'; // UI arranca espejo de JF
-
-        return {
-          submissionId: sub.id,
-          nombre: `${nombres} ${apellidos}`.trim() || 'Sin nombre',
-          documento: a['7']?.answer || 'Sin documento',
-          grado: a['8']?.answer || '1',
-          sede,
-          jornada: a['3']?.answer || '—',
-          estadoUI,
-          estadoJF, // espejo real en JF
-          flowStatus: sub.workflow_status || '', // sólo info
-        };
-      });
-
-      // pintar sedes
-      const sedeSel = $('sedeF'); 
-      sedeSel.innerHTML = '<option value="">Todas las sedes</option>' + [...sedes].map(s=>`<option>${s}</option>`).join('');
-
-      render();
-      note(`Cargados ${all.length} registros`,'success');
+        // Pintar sedes
+        const sedeSel = $('sedeF');
+        sedeSel.innerHTML = '<option value="">Todas las sedes</option>' + [...sedes].map(s=>`<option>${s}</option>`).join('');
+        render();
+        note(`Cargados ${all.length} registros`,'success');
+      }catch(e){
+        console.error(e); note('No se pudo leer Jotform (revisa API Key / Form ID)','error');
+      }
     };
 
-    async function fetchQuestionsAndGetQID(formId, apiKey, label){
-      const url = `https://api.jotform.com/form/${formId}/questions?apiKey=${apiKey}`;
-      const r = await fetch(url); const data = await r.json();
-      const norm = s=>(s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-      const target = norm(label);
-      if(!data?.content) return null;
-      for(const qid in data.content){ if(norm(data.content[qid]?.text)===target) return qid; }
-      for(const qid in data.content){ if(norm(data.content[qid]?.text).includes(target)) return qid; }
-      return null;
-    }
-
+    // ============ RENDER ============
     function render(){
       const sede = $('sedeF').value;
       const grado = $('gradoF').value;
@@ -231,13 +221,11 @@
                (!q || s.nombre.toLowerCase().includes(q) || (s.documento||'').includes(q));
       });
 
-      // stats
       $('stTotal').textContent = view.length;
       $('stPend').textContent  = view.filter(x=>x.estadoUI==='Pendiente' || x.estadoUI==='En Progreso').length;
       $('stOk').textContent    = view.filter(x=>x.estadoUI==='Aprobado').length;
       $('stBad').textContent   = view.filter(x=>x.estadoUI==='Rechazado').length;
 
-      // tabla
       const tb = $('tbody');
       if(view.length===0){ tb.innerHTML = '<tr><td colspan="7" style="text-align:center">Sin resultados</td></tr>'; return; }
 
@@ -258,72 +246,62 @@
             ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-bad" onclick="act(${i},'Rechazado')">❌</button>`:''}
             ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-doc" onclick="act(${i},'Solicitar Documentos')">📄</button>`:''}
             ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-lock" onclick="act(${i},'Bloqueado')">🔒</button>`:''}
-            ${(!['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-rev" onclick="act(${i},'Pendiente')">↩ Reversar</button>`:''}
+            ${(!['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-rev" onclick="reversar(${i})">↩ Reversar</button>`:''}
           </td>
         </tr>
       `).join('');
     }
 
-    // Acción central: cambia estado en JF y refresca UI (incluye verificación)
-    async function act(idx, nuevo){
+    // ============ ACCIONES ============
+    async function act(idx, nuevoEstado){
       const row = view[idx];
-      const target = all.find(x=>x.submissionId===row.submissionId);
-      if(!target) return;
+      const reg = all.find(x=>x.submissionId===row.submissionId);
+      if(!reg) return;
 
-      // Si es dropdown, valida opción exacta
-      if(ALLOWED_STATES.length && !ALLOWED_STATES.includes(nuevo)){
-        note(`El valor "${nuevo}" no está en las opciones del campo`, 'error'); return;
+      if(ALLOWED_STATES.length && !ALLOWED_STATES.includes(nuevoEstado)){
+        note(`El valor "${nuevoEstado}" no coincide con las opciones del campo`, 'error'); return;
       }
 
       // 1) UI optimista
-      target.estadoUI = nuevo; render();
+      reg.estadoUI = nuevoEstado;
+      render();
 
-      // 2) POST por proxy
       try{
-        const resp = await fetch(PROXY_URL,{
-          method:'POST',
-          headers:{'Content-Type':'application/json','X-Auth-Token':PROXY_TOKEN},
-          body: JSON.stringify({ submissionId: target.submissionId, qid: QID_ESTADO, value: nuevo })
-        });
-        const text = await resp.text();
-        console.log('Proxy <-', resp.status, text);
+        // 2) Actualiza en Jotform (el backend resuelve el QID de "Estado de aprobación")
+        const verificado = await actualizarEstadoEnJotform(reg.submissionId, nuevoEstado);
 
-        if(!resp.ok){ note(`Error proxy (${resp.status})`, 'error'); return; }
-
-        // 3) Verificar leyendo la submission
-        const ok = await verifyRemoteValue(target.submissionId, QID_ESTADO, nuevo);
-        if(ok){
-          target.estadoJF = nuevo;
-          note('Actualizado ✔', 'success');
-        }else{
-          note('Jotform no refleja el valor (QID/opciones)', 'error');
-        }
+        // 3) Refresca chip JF con lo que quedó
+        reg.estadoJF = verificado || nuevoEstado;
         render();
+        note('Actualizado ✔','success');
       }catch(e){
-        console.error(e); note('Error de red/proxy', 'error');
+        console.error(e);
+        note('No se pudo escribir en Jotform','error');
       }
     }
+    function reversar(idx){ act(idx,'Pendiente'); }
 
-    async function verifyRemoteValue(submissionId, qid, expected){
-      try{
-        const r = await fetch(`https://api.jotform.com/submission/${submissionId}?apiKey=${apiKey}`);
-        const data = await r.json();
-        const real = data?.content?.answers?.[qid]?.answer ?? '';
-        console.log('Verif JF:', {qid, real, expected});
-        return (normalize(real) === normalize(expected));
-      }catch(e){ console.log('No verificado',e); return false; }
+    // ============ LLAMADA AL PROXY ============
+    async function actualizarEstadoEnJotform(submissionId, nuevoEstado) {
+      const fId = $('formId').value.trim();
+      const payload = { submissionId, formId: fId, value: nuevoEstado };
+
+      const resp = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Auth-Token': PROXY_TOKEN // si no usas PROXY_SECRET, puedes borrar este header
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      console.log('Proxy →', resp.status, data);
+      if (!resp.ok) throw new Error(data?.error || 'Error actualizando en Jotform');
+      return data.verified; // lo que realmente quedó en JF
     }
 
+    // ============ UTILS ============
     function normalize(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
-
-    // Bootstrap
-    (function init(){
-      $('apiKey').value = apiKey; $('formId').value = formId;
-      $('userBadge').textContent = 'Operador';
-    })();
-
-    // Exponer si lo necesitas para debug
-    window._dbg = { fetchQuestionsAndGetQID, verifyRemoteValue };
   </script>
 </body>
 </html>
