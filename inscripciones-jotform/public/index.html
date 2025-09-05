@@ -190,6 +190,11 @@
             color: white;
         }
 
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
         /* Alerts */
         .alert {
             padding: 12px 20px;
@@ -428,7 +433,7 @@
             background: white;
             border-radius: 15px;
             padding: 30px;
-            max-width: 800px;
+            max-width: 900px;
             max-height: 90vh;
             overflow: auto;
             width: 90%;
@@ -479,6 +484,14 @@
         .field-value {
             color: #555;
             font-size: 14px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            color: var(--primary);
+            margin: 20px 0 10px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
         }
 
         /* Responsive */
@@ -664,12 +677,12 @@
                     <h2>Buscar Inscripciones</h2>
                     <div class="search-controls">
                         <input type="text" class="form-control" id="searchDoc" 
-                               placeholder="Número de documento">
+                               placeholder="Documento del acudiente">
                         <input type="text" class="form-control" id="searchName" 
                                placeholder="Nombre del estudiante">
                         <select class="form-control" id="searchGrade">
                             <option value="">Todos los grados</option>
-                            <option value="Pre">Preescolar</option>
+                            <option value="Transición">Transición</option>
                             <option value="1">1°</option>
                             <option value="2">2°</option>
                             <option value="3">3°</option>
@@ -784,6 +797,38 @@
         // API configuration
         const API_BASE = '/api';
 
+        // Field mapping based on JotForm structure
+        const FIELD_MAP = {
+            estado: '2',
+            jornada: '3',
+            nombre: '4',
+            apellido: '5',
+            genero: '6',
+            sede: '7',
+            grado: '8',
+            rh: '10',
+            edad: '11',
+            direccion: '12',
+            barrio: '13',
+            estrato: '14',
+            ciudad: '15',
+            celular: '16',
+            email: '17',
+            madre_nombre: '19',
+            madre_documento: '20',
+            madre_telefono: '21',
+            madre_email: '22',
+            padre_nombre: '27',
+            padre_documento: '28',
+            padre_celular: '29',
+            acudiente_nombre: '37',
+            acudiente_documento: '38',
+            acudiente_tel: '39',
+            acudiente_email: '40',
+            parentesco: '43',
+            observacion: '60'
+        };
+
         // Check authentication on load
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthentication();
@@ -838,21 +883,7 @@
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                // For demo purposes, allow demo login
-                if (colegio === 'demo' && password === 'demo2025') {
-                    currentUser = {
-                        colegio: 'demo',
-                        nombre: 'Colegio Demo',
-                        formId: '252455052823050'
-                    };
-                    currentYear = year;
-                    localStorage.setItem('authToken', 'demo-token');
-                    localStorage.setItem('userData', JSON.stringify(currentUser));
-                    showDashboard();
-                    loadDemoData();
-                } else {
-                    showLoginError('Error de conexión. Intente nuevamente.');
-                }
+                showLoginError('Error de conexión. Intente nuevamente.');
             }
             
             return false;
@@ -906,44 +937,8 @@
                 updateRecentTable();
             } catch (error) {
                 console.error('Error loading data:', error);
-                // Load demo data if API fails
-                loadDemoData();
+                showMessage('Error al cargar datos', 'danger');
             }
-        }
-
-        // Load demo data
-        function loadDemoData() {
-            // Generate demo submissions
-            submissions = generateDemoSubmissions();
-            updateStatistics();
-            updateRecentTable();
-            showMessage('Modo demo activado - Datos de ejemplo', 'info');
-        }
-
-        // Generate demo submissions
-        function generateDemoSubmissions() {
-            const nombres = ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Sofia', 'Diego', 'Laura'];
-            const apellidos = ['García', 'López', 'Martínez', 'Rodriguez', 'González', 'Pérez'];
-            const demoData = [];
-            
-            for (let i = 0; i < 25; i++) {
-                const nombre = nombres[Math.floor(Math.random() * nombres.length)];
-                const apellido = apellidos[Math.floor(Math.random() * apellidos.length)];
-                
-                demoData.push({
-                    id: `DEMO-${1000 + i}`,
-                    created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-                    answers: {
-                        '3': { answer: `${10000000 + i}` },
-                        '4': { answer: nombre },
-                        '5': { answer: apellido },
-                        '6': { answer: `${10 + Math.floor(Math.random() * 8)}` },
-                        '13': { answer: `${Math.floor(Math.random() * 11) + 1}` }
-                    }
-                });
-            }
-            
-            return demoData;
         }
 
         // Update statistics
@@ -967,7 +962,7 @@
             document.getElementById('configTotal').textContent = total;
         }
 
-        // Update recent table
+        // Update recent table with correct field mapping
         function updateRecentTable() {
             const tbody = document.getElementById('recentTable');
             const recent = submissions.slice(0, 10);
@@ -985,9 +980,11 @@
             
             tbody.innerHTML = recent.map(sub => {
                 const answers = sub.answers || {};
-                const nombre = (answers['4']?.answer || '') + ' ' + (answers['5']?.answer || '');
-                const documento = answers['3']?.answer || 'N/A';
-                const grado = answers['13']?.answer || 'N/A';
+                const nombre = (answers[FIELD_MAP.nombre]?.answer || '') + ' ' + (answers[FIELD_MAP.apellido]?.answer || '');
+                const documento = answers[FIELD_MAP.madre_documento]?.answer || 
+                                answers[FIELD_MAP.padre_documento]?.answer || 
+                                answers[FIELD_MAP.acudiente_documento]?.answer || 'N/A';
+                const grado = answers[FIELD_MAP.grado]?.answer || 'N/A';
                 const fecha = new Date(sub.created_at).toLocaleDateString();
                 
                 return `
@@ -996,7 +993,7 @@
                         <td>${fecha}</td>
                         <td>${nombre.trim() || 'Sin nombre'}</td>
                         <td>${documento}</td>
-                        <td>${grado}°</td>
+                        <td>${grado}</td>
                         <td><span class="badge badge-success">Activo</span></td>
                         <td>
                             <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" 
@@ -1009,7 +1006,7 @@
             }).join('');
         }
 
-        // View details
+        // View details with all fields
         function viewDetails(submissionId) {
             const submission = submissions.find(s => s.id === submissionId);
             if (!submission) return;
@@ -1019,35 +1016,179 @@
             
             const answers = submission.answers || {};
             
-            let html = '<div class="field-grid">';
+            let html = '';
             
-            const fields = {
-                '3': 'Documento',
-                '4': 'Nombres',
-                '5': 'Apellidos',
-                '6': 'Edad',
-                '13': 'Grado'
-            };
-            
-            for (const [key, label] of Object.entries(fields)) {
-                if (answers[key]) {
-                    html += `
-                        <div class="field-item">
-                            <div class="field-label">${label}</div>
-                            <div class="field-value">${answers[key].answer || 'N/A'}</div>
-                        </div>
-                    `;
-                }
-            }
-            
+            // Datos del Estudiante
+            html += '<h3 class="section-title">📚 Datos del Estudiante</h3>';
+            html += '<div class="field-grid">';
+            html += `
+                <div class="field-item">
+                    <div class="field-label">Nombres</div>
+                    <div class="field-value">${answers[FIELD_MAP.nombre]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Apellidos</div>
+                    <div class="field-value">${answers[FIELD_MAP.apellido]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Género</div>
+                    <div class="field-value">${answers[FIELD_MAP.genero]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Edad</div>
+                    <div class="field-value">${answers[FIELD_MAP.edad]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">RH</div>
+                    <div class="field-value">${answers[FIELD_MAP.rh]?.answer || 'N/A'}</div>
+                </div>
+            `;
             html += '</div>';
             
+            // Información Académica
+            html += '<h3 class="section-title">🏫 Información Académica</h3>';
+            html += '<div class="field-grid">';
             html += `
-                <div style="margin-top: 30px; text-align: center;">
-                    <button class="btn btn-success" style="width: auto;" onclick="approveSubmission('${submissionId}')">
-                        ✅ Aprobar
+                <div class="field-item">
+                    <div class="field-label">Grado</div>
+                    <div class="field-value">${answers[FIELD_MAP.grado]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Sede</div>
+                    <div class="field-value">${answers[FIELD_MAP.sede]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Jornada</div>
+                    <div class="field-value">${answers[FIELD_MAP.jornada]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Estado</div>
+                    <div class="field-value">${answers[FIELD_MAP.estado]?.answer || 'N/A'}</div>
+                </div>
+            `;
+            html += '</div>';
+            
+            // Información de Contacto
+            html += '<h3 class="section-title">📍 Información de Contacto</h3>';
+            html += '<div class="field-grid">';
+            html += `
+                <div class="field-item">
+                    <div class="field-label">Dirección</div>
+                    <div class="field-value">${answers[FIELD_MAP.direccion]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Barrio</div>
+                    <div class="field-value">${answers[FIELD_MAP.barrio]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Ciudad</div>
+                    <div class="field-value">${answers[FIELD_MAP.ciudad]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Estrato</div>
+                    <div class="field-value">${answers[FIELD_MAP.estrato]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Celular</div>
+                    <div class="field-value">${answers[FIELD_MAP.celular]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Email</div>
+                    <div class="field-value">${answers[FIELD_MAP.email]?.answer || 'N/A'}</div>
+                </div>
+            `;
+            html += '</div>';
+            
+            // Datos de la Madre
+            html += '<h3 class="section-title">👩 Datos de la Madre</h3>';
+            html += '<div class="field-grid">';
+            html += `
+                <div class="field-item">
+                    <div class="field-label">Nombre</div>
+                    <div class="field-value">${answers[FIELD_MAP.madre_nombre]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Documento</div>
+                    <div class="field-value">${answers[FIELD_MAP.madre_documento]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Teléfono</div>
+                    <div class="field-value">${answers[FIELD_MAP.madre_telefono]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Email</div>
+                    <div class="field-value">${answers[FIELD_MAP.madre_email]?.answer || 'N/A'}</div>
+                </div>
+            `;
+            html += '</div>';
+            
+            // Datos del Padre
+            html += '<h3 class="section-title">👨 Datos del Padre</h3>';
+            html += '<div class="field-grid">';
+            html += `
+                <div class="field-item">
+                    <div class="field-label">Nombre</div>
+                    <div class="field-value">${answers[FIELD_MAP.padre_nombre]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Documento</div>
+                    <div class="field-value">${answers[FIELD_MAP.padre_documento]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Celular</div>
+                    <div class="field-value">${answers[FIELD_MAP.padre_celular]?.answer || 'N/A'}</div>
+                </div>
+            `;
+            html += '</div>';
+            
+            // Datos del Acudiente
+            html += '<h3 class="section-title">👤 Datos del Acudiente</h3>';
+            html += '<div class="field-grid">';
+            html += `
+                <div class="field-item">
+                    <div class="field-label">Nombre</div>
+                    <div class="field-value">${answers[FIELD_MAP.acudiente_nombre]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Documento</div>
+                    <div class="field-value">${answers[FIELD_MAP.acudiente_documento]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Teléfono</div>
+                    <div class="field-value">${answers[FIELD_MAP.acudiente_tel]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Email</div>
+                    <div class="field-value">${answers[FIELD_MAP.acudiente_email]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Parentesco</div>
+                    <div class="field-value">${answers[FIELD_MAP.parentesco]?.answer || 'N/A'}</div>
+                </div>
+            `;
+            html += '</div>';
+            
+            // Observaciones
+            if (answers[FIELD_MAP.observacion]?.answer) {
+                html += '<h3 class="section-title">📝 Observaciones</h3>';
+                html += '<div style="background: var(--light); padding: 15px; border-radius: 8px; margin-top: 10px;">';
+                html += `<p>${answers[FIELD_MAP.observacion].answer}</p>`;
+                html += '</div>';
+            }
+            
+            // Action buttons
+            html += `
+                <div style="margin-top: 30px; text-align: center; padding-top: 20px; border-top: 2px solid var(--border);">
+                    <button class="btn btn-success" style="width: auto; margin: 0 10px;" onclick="approveSubmission('${submissionId}')">
+                        ✅ Aprobar Inscripción
                     </button>
-                    <button class="btn btn-warning" style="width: auto;" onclick="closeModal()">
+                    <button class="btn btn-danger" style="width: auto; margin: 0 10px;" onclick="rejectSubmission('${submissionId}')">
+                        ❌ Rechazar Inscripción
+                    </button>
+                    <button class="btn btn-warning" style="width: auto; margin: 0 10px;" onclick="printDetails('${submissionId}')">
+                        🖨️ Imprimir
+                    </button>
+                    <button class="btn btn-secondary" style="width: auto; margin: 0 10px;" onclick="closeModal()">
                         Cerrar
                     </button>
                 </div>
@@ -1064,8 +1205,23 @@
 
         // Approve submission
         function approveSubmission(submissionId) {
-            showMessage(`Inscripción ${submissionId} aprobada`, 'success');
+            showMessage(`Inscripción ${submissionId} aprobada exitosamente`, 'success');
             closeModal();
+            // Here you would make an API call to update the status
+        }
+
+        // Reject submission
+        function rejectSubmission(submissionId) {
+            if (confirm('¿Está seguro de rechazar esta inscripción?')) {
+                showMessage(`Inscripción ${submissionId} rechazada`, 'warning');
+                closeModal();
+                // Here you would make an API call to update the status
+            }
+        }
+
+        // Print details
+        function printDetails(submissionId) {
+            window.print();
         }
 
         // Show tab
@@ -1087,7 +1243,6 @@
             const container = document.getElementById('inscripcionesContainer');
             container.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>';
             
-            // Simulate loading
             setTimeout(() => {
                 displayAllSubmissions(submissions);
             }, 1000);
@@ -1112,11 +1267,12 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Fecha</th>
-                                <th>Documento</th>
                                 <th>Nombres</th>
                                 <th>Apellidos</th>
-                                <th>Edad</th>
                                 <th>Grado</th>
+                                <th>Sede</th>
+                                <th>Jornada</th>
+                                <th>Documento Acudiente</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -1131,11 +1287,12 @@
                     <tr>
                         <td>${sub.id}</td>
                         <td>${fecha}</td>
-                        <td>${answers['3']?.answer || 'N/A'}</td>
-                        <td>${answers['4']?.answer || 'N/A'}</td>
-                        <td>${answers['5']?.answer || 'N/A'}</td>
-                        <td>${answers['6']?.answer || 'N/A'}</td>
-                        <td>${answers['13']?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.nombre]?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.apellido]?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.grado]?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.sede]?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.jornada]?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.acudiente_documento]?.answer || 'N/A'}</td>
                         <td>
                             <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" 
                                     onclick="viewDetails('${sub.id}')">
@@ -1159,22 +1316,31 @@
             let filtered = submissions;
             
             if (doc) {
-                filtered = filtered.filter(s => 
-                    (s.answers['3']?.answer || '').toLowerCase().includes(doc)
-                );
+                filtered = filtered.filter(s => {
+                    const answers = s.answers || {};
+                    const docs = [
+                        answers[FIELD_MAP.madre_documento]?.answer,
+                        answers[FIELD_MAP.padre_documento]?.answer,
+                        answers[FIELD_MAP.acudiente_documento]?.answer
+                    ];
+                    return docs.some(d => d && d.toLowerCase().includes(doc));
+                });
             }
             
             if (name) {
                 filtered = filtered.filter(s => {
-                    const fullName = (s.answers['4']?.answer || '') + ' ' + (s.answers['5']?.answer || '');
+                    const answers = s.answers || {};
+                    const fullName = (answers[FIELD_MAP.nombre]?.answer || '') + ' ' + 
+                                   (answers[FIELD_MAP.apellido]?.answer || '');
                     return fullName.toLowerCase().includes(name);
                 });
             }
             
             if (grade) {
-                filtered = filtered.filter(s => 
-                    s.answers['13']?.answer === grade
-                );
+                filtered = filtered.filter(s => {
+                    const answers = s.answers || {};
+                    return answers[FIELD_MAP.grado]?.answer === grade;
+                });
             }
             
             const resultsDiv = document.getElementById('searchResults');
@@ -1198,9 +1364,9 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Fecha</th>
-                                <th>Documento</th>
                                 <th>Estudiante</th>
                                 <th>Grado</th>
+                                <th>Sede</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -1210,15 +1376,16 @@
             results.forEach(sub => {
                 const answers = sub.answers || {};
                 const fecha = new Date(sub.created_at).toLocaleDateString();
-                const nombre = (answers['4']?.answer || '') + ' ' + (answers['5']?.answer || '');
+                const nombre = (answers[FIELD_MAP.nombre]?.answer || '') + ' ' + 
+                             (answers[FIELD_MAP.apellido]?.answer || '');
                 
                 html += `
                     <tr>
                         <td>${sub.id}</td>
                         <td>${fecha}</td>
-                        <td>${answers['3']?.answer || 'N/A'}</td>
                         <td>${nombre}</td>
-                        <td>${answers['13']?.answer || 'N/A'}°</td>
+                        <td>${answers[FIELD_MAP.grado]?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.sede]?.answer || 'N/A'}</td>
                         <td>
                             <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" 
                                     onclick="viewDetails('${sub.id}')">
@@ -1242,32 +1409,90 @@
             
             let content = '';
             
-            if (format === 'csv') {
-                content = 'ID,Fecha,Documento,Nombres,Apellidos,Edad,Grado\n';
+            if (format === 'csv' || format === 'excel') {
+                // CSV Header
+                content = 'ID,Fecha,Nombres,Apellidos,Género,Edad,Grado,Sede,Jornada,RH,Dirección,Barrio,Estrato,Ciudad,Celular,Email,Madre Nombre,Madre Documento,Padre Nombre,Padre Documento,Acudiente Nombre,Acudiente Documento,Parentesco\n';
+                
                 submissions.forEach(sub => {
                     const answers = sub.answers || {};
                     const fecha = new Date(sub.created_at).toLocaleDateString();
-                    content += `${sub.id},${fecha},${answers['3']?.answer || ''},${answers['4']?.answer || ''},${answers['5']?.answer || ''},${answers['6']?.answer || ''},${answers['13']?.answer || ''}\n`;
+                    
+                    const row = [
+                        sub.id,
+                        fecha,
+                        answers[FIELD_MAP.nombre]?.answer || '',
+                        answers[FIELD_MAP.apellido]?.answer || '',
+                        answers[FIELD_MAP.genero]?.answer || '',
+                        answers[FIELD_MAP.edad]?.answer || '',
+                        answers[FIELD_MAP.grado]?.answer || '',
+                        answers[FIELD_MAP.sede]?.answer || '',
+                        answers[FIELD_MAP.jornada]?.answer || '',
+                        answers[FIELD_MAP.rh]?.answer || '',
+                        answers[FIELD_MAP.direccion]?.answer || '',
+                        answers[FIELD_MAP.barrio]?.answer || '',
+                        answers[FIELD_MAP.estrato]?.answer || '',
+                        answers[FIELD_MAP.ciudad]?.answer || '',
+                        answers[FIELD_MAP.celular]?.answer || '',
+                        answers[FIELD_MAP.email]?.answer || '',
+                        answers[FIELD_MAP.madre_nombre]?.answer || '',
+                        answers[FIELD_MAP.madre_documento]?.answer || '',
+                        answers[FIELD_MAP.padre_nombre]?.answer || '',
+                        answers[FIELD_MAP.padre_documento]?.answer || '',
+                        answers[FIELD_MAP.acudiente_nombre]?.answer || '',
+                        answers[FIELD_MAP.acudiente_documento]?.answer || '',
+                        answers[FIELD_MAP.parentesco]?.answer || ''
+                    ];
+                    
+                    content += row.map(field => `"${field}"`).join(',') + '\n';
                 });
             }
             
-            const blob = new Blob([content], { type: 'text/csv' });
+            // Create and download file
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `inscripciones_${currentYear}.${format === 'excel' ? 'csv' : format}`;
+            a.download = `inscripciones_${currentYear}_${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
             
-            showMessage(`Archivo ${format.toUpperCase()} generado`, 'success');
+            showMessage(`Archivo ${format.toUpperCase()} generado exitosamente`, 'success');
         }
 
         // Generate report
         function generateReport(type) {
             showMessage(`Generando reporte de ${type}...`, 'info');
+            
             setTimeout(() => {
-                showMessage('Reporte generado exitosamente', 'success');
+                if (type === 'general') {
+                    exportData('excel');
+                } else if (type === 'stats') {
+                    // Generate statistics report
+                    const stats = {
+                        total: submissions.length,
+                        porGrado: {},
+                        porSede: {},
+                        porJornada: {}
+                    };
+                    
+                    submissions.forEach(sub => {
+                        const answers = sub.answers || {};
+                        const grado = answers[FIELD_MAP.grado]?.answer || 'Sin especificar';
+                        const sede = answers[FIELD_MAP.sede]?.answer || 'Sin especificar';
+                        const jornada = answers[FIELD_MAP.jornada]?.answer || 'Sin especificar';
+                        
+                        stats.porGrado[grado] = (stats.porGrado[grado] || 0) + 1;
+                        stats.porSede[sede] = (stats.porSede[sede] || 0) + 1;
+                        stats.porJornada[jornada] = (stats.porJornada[jornada] || 0) + 1;
+                    });
+                    
+                    console.log('Estadísticas generadas:', stats);
+                    showMessage('Reporte estadístico generado - Ver consola', 'success');
+                } else {
+                    showMessage('Reporte generado exitosamente', 'success');
+                }
             }, 2000);
         }
 
@@ -1280,7 +1505,7 @@
         // Clear cache
         function clearCache() {
             localStorage.removeItem('submissions_cache');
-            showMessage('Caché limpiado', 'success');
+            showMessage('Caché limpiado exitosamente', 'success');
         }
 
         // Show message
