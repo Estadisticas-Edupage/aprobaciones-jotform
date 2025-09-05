@@ -1,649 +1,610 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Colegio Técnico Vicente Azuero – Aprobaciones</title>
-  <!-- SheetJS para exportar a Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <style>
-    *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:22px;font-family:Segoe UI,Tahoma,Verdana,sans-serif}
-    .container{max-width:1200px;margin:0 auto}
-    .card{background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.12);overflow:hidden}
-    .header{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:18px 22px;flex-wrap:wrap}
-    .title{font-size:22px;font-weight:800}
-    .badge{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:999px;padding:6px 12px}
-    .panel{background:#fff;border-radius:16px;margin:12px 0;padding:14px 16px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    button,select,input{padding:10px;border-radius:10px;border:2px solid #e5e7eb;font-size:14px}
-    button{background:#6970f6;color:#fff;border:none;cursor:pointer} button:hover{opacity:.92}
-    .ghost{background:#e5e7eb;color:#111}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .stat{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.06)}
-    .stat .n{font-size:30px;font-weight:900;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .table{overflow:auto;border-radius:16px}
-    table{width:100%;border-collapse:collapse} th,td{padding:12px 14px;border-bottom:1px solid #f1f5f9}
-    th{background:#f8fafc;font-weight:700;cursor:pointer;user-select:none}
-    th.nosort{cursor:default}
-    .chip{display:inline-block;font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid #e5e7eb;margin-right:6px}
-    .ok{background:#d4edda;color:#155724;border-color:#c3e6cb}
-    .warn{background:#fff3cd;color:#856404;border-color:#ffe69c}
-    .bad{background:#f8d7da;color:#721c24;border-color:#f5c6cb}
-    .info{background:#e3f2fd;color:#1976d2;border-color:#bbdefb}
-    .muted{background:#eee;color:#444;border-color:#ddd}
-    .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .btn-ok{background:#28a745} .btn-bad{background:#dc3545} .btn-doc{background:#ff9800} .btn-lock{background:#9e9e9e} .btn-rev{background:#6b7280} .btn-info{background:#17a2b8}
-    .note{position:fixed;right:20px;top:20px;padding:12px 16px;border-radius:10px;color:#fff;display:none;box-shadow:0 10px 20px rgba(0,0,0,.2);z-index:99}
-    .note.success{background:#16a34a} .note.error{background:#dc2626} .note.info{background:#0284c7}
-    /* Modal ficha */
-    .modal{display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:999}
-    .modal-card{background:#fff;border-radius:14px;max-width:920px;margin:40px auto;padding:18px 20px;max-height:85vh;overflow:auto}
-    .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-    .close{cursor:pointer;font-size:22px}
-    /* Login modal */
-    .login{display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:1000}
-    .login-card{background:#fff;border-radius:14px;max-width:420px;margin:8% auto;padding:22px}
-    .hint{font-size:12px;color:#6b7280}
-    @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:600px){.grid{grid-template-columns:1fr} th,td{font-size:12px;padding:9px}}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Colegio Técnico Vicente Azuero — Aprobaciones</title>
+<style>
+  :root{
+    --indigo:#4f46e5; --indigo-600:#4f46e5; --indigo-500:#6366f1; --indigo-400:#818cf8;
+    --blue-50:#eff6ff; --blue-100:#dbeafe; --blue-200:#bfdbfe; --blue-700:#1d4ed8;
+    --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-700:#334155;
+    --emerald:#10b981; --red:#ef4444; --amber:#f59e0b; --zinc-100:#f4f4f5;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,"Helvetica Neue",Arial;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color:#0f172a;
+  }
+  .wrap{max-width:1200px;margin:24px auto;padding:16px;background:#fff;border-radius:18px;
+        box-shadow:0 18px 36px rgba(0,0,0,.15)}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  h1{font-size:24px;margin:0;font-weight:800}
+  .role{background:#eef2ff;color:#1d4ed8;border:1px solid #e0e7ff;padding:6px 10px;border-radius:20px}
+  .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:10px 14px;
+       font-weight:600; cursor:pointer}
+  .btn.sync{background:#e0e7ff;color:#1d4ed8}
+  .btn.xls{background:#d1fae5;color:#065f46}
+  .btn.approve{background:#10b981;color:#fff}
+  .btn.reject{background:#ef4444;color:#fff}
+  .btn.reverse{background:#475569;color:#fff}
+  .btn.logout{background:#ef4444;color:#fff}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:16px 0}
+  .stat{background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:14px;text-align:center}
+  .stat .n{font-size:26px;font-weight:800;color:#1d4ed8}
+  .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+  select,input[type="text"]{padding:10px;border-radius:10px;border:1px solid #e5e7eb;background:#fff}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  thead th{font-size:13px;text-transform:uppercase;color:#475569;background:#f1f5ff;border-bottom:1px solid #e5e7eb;padding:10px;text-align:left}
+  tbody td{border-bottom:1px solid #f1f5f9;padding:10px;vertical-align:top}
+  tbody tr:hover{background:#f8fafc}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:16px;border:1px solid #e5e7eb;background:#f8fafc;color:#334155;font-size:12px}
+  .chip.ok{background:#d1fae5;border-color:#a7f3d0;color:#065f46}
+  .chip.warn{background:#fef9c3;border-color:#fde68a;color:#854d0e}
+  .chip.bad{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+  .chip.tag{background:#eef2ff;border-color:#e0e7ff}
+  .actions .btn-sm{padding:6px 10px;border-radius:8px;border:0;cursor:pointer}
+  .btn-info{background:#0ea5e9;color:#fff}
+  .btn-ok{background:#10b981;color:#fff}
+  .btn-bad{background:#ef4444;color:#fff}
+  .btn-lock{background:#94a3b8;color:#fff}
+  .center{display:flex;justify-content:center;align-items:center;padding:24px}
+  /* ===== FICHA (modal) ===== */
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:1000}
+  .modal{position:fixed;inset:0;display:none;z-index:1001}
+  .modal-card{background:#fff;border-radius:16px;max-width:980px;margin:40px auto;padding:18px 22px;
+              max-height:86vh;overflow:auto;border:1px solid #e5e7eb}
+  .headline{display:flex;align-items:center;gap:14px;border-bottom:1px solid #e5e7eb;padding-bottom:10px;margin-bottom:12px}
+  .avatar{width:86px;height:86px;border-radius:999px;object-fit:cover;border:3px solid #667eea;background:#f0f3ff}
+  .title-xl{font-size:22px;font-weight:800;margin:0}
+  .subchips{display:flex;gap:8px;align-items:center}
+  .section{border-radius:12px;padding:14px 16px;margin:12px 0;border:1px solid #e5e7eb;background:#fff}
+  .section.blue{background:#f1f5ff;border-color:#dbe4ff}
+  .section.indigo{background:#eef2ff;border-color:#e0e7ff}
+  .section.slate{background:#f8fafc;border-color:#e5e7eb}
+  .link-list a{display:inline-block;margin:4px 8px 4px 0;text-decoration:none}
+  .embed-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:8px}
+  /* ===== Login ===== */
+  .login{max-width:430px;margin:60px auto;background:#fff;border-radius:16px;padding:20px;
+         border:1px solid #e5e7eb;box-shadow:0 14px 28px rgba(0,0,0,.12)}
+  .login h2{margin:0 0 10px}
+  .role-box{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+  .role-item{display:flex;align-items:center;justify-content:space-between;border:1px solid #e5e7eb;border-radius:12px;padding:10px}
+  .role-item input{width:140px;padding:8px;border-radius:8px;border:1px solid #e5e7eb}
+  .muted{color:#64748b;font-size:13px}
+</style>
 </head>
 <body>
-  <!-- LOGIN -->
-  <div class="login" id="login">
-    <div class="login-card">
-      <h2 style="margin:0 0 6px">🔐 Ingreso</h2>
-      <p class="hint" style="margin:0 0 12px">Escribe tu contraseña de coordinador o de administrador.</p>
-      <input id="pass" type="password" placeholder="Contraseña…" style="width:100%;margin-bottom:10px">
-      <div class="row" style="justify-content:flex-end">
-        <button class="ghost" onclick="cancelLogin()">Cancelar</button>
-        <button onclick="doLogin()">Ingresar</button>
-      </div>
-      <div id="loginMsg" class="hint" style="color:#dc2626;margin-top:8px;display:none">Contraseña inválida</div>
-      <hr style="margin:14px 0; border:none; border-top:1px solid #eee">
-      <div class="hint">
-        Roles disponibles (ejemplo):<br>
-        <b>Administrador</b>, <b>Sede A Mañana</b>, <b>Sede A Tarde</b>, <b>Sede B</b>, <b>Sede C</b>, <b>Sede D</b>.
-      </div>
+
+<div id="login" class="login">
+  <h2>Acceso – Aprobaciones</h2>
+  <p class="muted">Elija su rol y digite la contraseña asignada.</p>
+
+  <div id="roles" class="role-box"></div>
+
+  <button id="btnLogin" class="btn approve" style="width:100%;margin-top:8px">Ingresar</button>
+  <p class="muted" style="margin-top:12px">Administrador y Coordinadores: si necesita cambiar contraseñas me avisa y lo dejo en configuración.</p>
+</div>
+
+<div id="app" class="wrap" style="display:none">
+  <header>
+    <h1>Colegio Técnico Vicente Azuero — Aprobaciones</h1>
+    <div>
+      <span id="who" class="role">—</span>
+      <button id="logout" class="btn logout">Cerrar sesión</button>
     </div>
+  </header>
+
+  <div class="filters" style="gap:8px;margin-bottom:12px">
+    <button id="sync" class="btn sync">🔄 Sincronizar</button>
+    <button id="xport" class="btn xls">📥 Exportar Excel</button>
+    <button id="apSel" class="btn approve">✅ Aprobar seleccionados</button>
+    <button id="reSel" class="btn reject">❌ Rechazar seleccionados</button>
+    <button id="rvSel" class="btn reverse">↩︎ Reversar seleccionados</button>
   </div>
 
-  <!-- APP -->
-  <div class="container" id="app" style="display:none">
-    <div class="card">
-      <div class="header">
-        <div class="title">🎓 Colegio Técnico Vicente Azuero – Aprobaciones</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div class="badge" id="userBadge">Rol</div>
-          <button class="ghost" id="logout">Cerrar sesión</button>
-        </div>
-      </div>
-
-      <!-- Barra de acciones -->
-      <div class="panel">
-        <div class="row">
-          <button id="sync">🔄 Sincronizar</button>
-          <button id="export">📊 Exportar Excel</button>
-          <button id="bulkOk" class="btn-ok">✅ Aprobar seleccionados</button>
-          <button id="bulkBad" class="btn-bad">❌ Rechazar seleccionados</button>
-          <button id="bulkRev" class="btn-rev">↩ Reversar seleccionados</button>
-          <small id="lastSync" style="color:#6b7280;margin-left:8px"></small>
-        </div>
-      </div>
-
-      <!-- Stats -->
-      <div class="grid">
-        <div class="stat"><div class="n" id="stTotal">0</div><div>TOTAL ESTUDIANTES</div></div>
-        <div class="stat"><div class="n" id="stPend">0</div><div>PENDIENTES</div></div>
-        <div class="stat"><div class="n" id="stOk">0</div><div>APROBADOS</div></div>
-        <div class="stat"><div class="n" id="stBad">0</div><div>RECHAZADOS</div></div>
-      </div>
-
-      <!-- Filtros -->
-      <div class="panel">
-        <div class="row">
-          <select id="sedeF"><option value="">Todas las Sedes</option></select>
-          <select id="gradoF">
-            <option value="">Todos los Grados</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option>
-          </select>
-          <select id="estadoF">
-            <option value="">Todos los Estados</option>
-            <option>Pendiente</option><option>En Progreso</option><option>Aprobar</option><option>Rechazar</option><option>Solicitar Documentos</option><option>Bloqueado</option>
-          </select>
-          <input id="busca" placeholder="Buscar estudiante o documento…">
-        </div>
-      </div>
-
-      <!-- Tabla -->
-      <div class="panel table">
-        <table>
-          <thead>
-          <tr>
-            <th class="nosort"><input type="checkbox" id="chkAll"></th>
-            <th onclick="sortBy('nombre')">Nombre</th>
-            <th onclick="sortBy('documento')">Documento</th>
-            <th onclick="sortBy('grado')">Grado</th>
-            <th onclick="sortBy('sede')">Sede</th>
-            <th onclick="sortBy('jornada')">Jornada</th>
-            <th class="nosort">Estado</th>
-            <th class="nosort">Acciones</th>
-          </tr>
-          </thead>
-          <tbody id="tbody"><tr><td colspan="8" style="text-align:center">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
+  <div class="stats">
+    <div class="stat"><div class="n" id="sTot">0</div><div>Total estudiantes</div></div>
+    <div class="stat"><div class="n" id="sPen">0</div><div>Pendientes</div></div>
+    <div class="stat"><div class="n" id="sApr">0</div><div>Aprobados</div></div>
+    <div class="stat"><div class="n" id="sRej">0</div><div>Rechazados</div></div>
   </div>
 
-  <!-- Modal Ficha estudiante -->
-  <div class="modal" id="modal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="mTitle">Detalle del estudiante</h3>
-        <span class="close" id="mClose">×</span>
-      </div>
-      <div id="mBody"></div>
-    </div>
+  <div class="filters">
+    <select id="fSede"></select>
+    <select id="fGrado"></select>
+    <select id="fEstado"></select>
+    <input id="fBuscar" type="text" placeholder="Buscar estudiante o documento…" />
   </div>
 
-  <div id="note" class="note"></div>
+  <div id="loading" class="center">Cargando…</div>
+  <table style="display:none" id="tbl">
+    <thead>
+      <tr>
+        <th style="width:36px"><input type="checkbox" id="chkAll"></th>
+        <th>Nombre</th><th>Documento</th><th>Grado</th><th>Sede</th><th>Jornada</th>
+        <th>Estado</th><th style="width:210px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
 
-  <script>
-    // ========= AJUSTA ESTO A TUS SEDES REALES =========
-    // Mapa de alias "Sede A/B/C/D" a los textos exactos que llegan desde Jotform.
-    const SEDE_MAP = {
-      'Sede A': 'Colegio Tecnico Vicente Azuero - Lagos 2',
-      'Sede B': 'Colegio Tecnico Vicente Azuero - Principal',
-      'Sede C': 'Instituto Andres Bello - Lagos 1',
-      'Sede D': 'Instituto Juan Pablo I - Lagos 2'
-    };
+<!-- Backdrop + Modal Ficha -->
+<div id="backdrop" class="backdrop"></div>
+<div id="modal" class="modal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:flex-end">
+      <button onclick="closeModal()" class="btn reverse" style="padding:6px 10px">Cerrar ×</button>
+    </div>
+    <div id="mBody"></div>
+  </div>
+</div>
 
-    // ========= ROLES+CONTRASEÑAS ==========
-    const ROLES = {
-      admin:        { name:'Administrador', pass:'admin123', canAll:true },
-      sedeA_manana: { name:'Sede A – Mañana', pass:'aM2024', sede:SEDE_MAP['Sede A'], jornada:'Mañana' },
-      sedeA_tarde:  { name:'Sede A – Tarde',  pass:'aT2024', sede:SEDE_MAP['Sede A'], jornada:'Tarde' },
-      sedeB:        { name:'Sede B',          pass:'b2024',  sede:SEDE_MAP['Sede B'] },
-      sedeC:        { name:'Sede C',          pass:'c2024',  sede:SEDE_MAP['Sede C'] },
-      sedeD:        { name:'Sede D',          pass:'d2024',  sede:SEDE_MAP['Sede D'] },
-    };
-    let CURRENT_ROLE_KEY = localStorage.getItem('role_key') || null;
-    const CURRENT_ROLE = ()=> CURRENT_ROLE_KEY ? ROLES[CURRENT_ROLE_KEY] : null;
+<script>
+/* =======================
+   ROLES (con contraseña)
+   ======================= */
+const SEDE_MAP = {
+  'Sede A':'Colegio Tecnico Vicente Azuero - Lagos 2',
+  'Sede B':'Instituto Andres Bello - Lagos 1',
+  'Sede C':'Instituto Juan Pablo I - Lagos 2',
+  'Sede D':'Colegio Tecnico Vicente Azuero - Principal'
+};
+// Ajusta nombres si tu texto en Jotform difiere
 
-    // ========= PROXY TOKEN (mismo que PROXY_SECRET en Vercel) =========
-    const PROXY_TOKEN = '12345-seguro';
-    const ALLOWED_STATES = ['Pendiente','Aprobar','Rechazar','Solicitar Documentos','Bloqueado','En Progreso'];
+const ROLES = {
+  admin:        { name:'Administrador', pass:'admin123', canAll:true },
+  sedeA_m:      { name:'Sede A – Mañana', pass:'aM2024', sede:SEDE_MAP['Sede A'], jornada:'Mañana' },
+  sedeA_t:      { name:'Sede A – Tarde',  pass:'aT2024', sede:SEDE_MAP['Sede A'], jornada:'Tarde' },
+  sedeB:        { name:'Sede B',          pass:'b2024',  sede:SEDE_MAP['Sede B'] },
+  sedeC:        { name:'Sede C',          pass:'c2024',  sede:SEDE_MAP['Sede C'] },
+  sedeD:        { name:'Sede D',          pass:'d2024',  sede:SEDE_MAP['Sede D'] },
+};
 
-    // ========= STATE =========
-    let FORM_ID_LINK = null;
-    let all = [];
-    let view = [];
-    let sortKey = null, sortDir = 1;
+let currentRoleId = null;
+let rawList = [];     // submissions crudas
+let all = [];         // mapeo
+let view = [];        // vista filtrada actual
 
-    const $ = id => document.getElementById(id);
-    const note = (msg,type='info')=>{ const n=$('note'); n.textContent=msg; n.className='note '+type; n.style.display='block'; setTimeout(()=>n.style.display='none',2200); };
-    const cls = (estado)=>{ const n=(estado||'').toLowerCase();
-      if(n.includes('aproba')) return 'ok';
-      if(n.includes('rechaz') || n.includes('no aprob')) return 'bad';
-      if(n.includes('progreso')) return 'info';
-      if(n.includes('solicitar')) return 'warn';
-      if(n.includes('bloque')) return 'muted';
-      return 'warn';
-    };
-    function normalize(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
+const ESTADOS_UI = ['Pendiente','En Progreso','Aprobado','Rechazado','Solicitar Documentos','Bloqueado'];
+const ESTADO_CLASS = s => s==='Aprobado' ? 'chip ok' : s==='Rechazado' ? 'chip bad' : s==='Solicitar Documentos' ? 'chip warn' : 'chip';
 
-    // ======== LOGIN ========
-    function showLogin(){ $('login').style.display='block'; $('app').style.display='none'; }
-    function hideLogin(){ $('login').style.display='none'; $('app').style.display='block'; }
-    function cancelLogin(){ $('pass').value=''; showLogin(); }
-    function doLogin(){
-      const p = $('pass').value.trim();
-      const okKey = Object.keys(ROLES).find(k=>ROLES[k].pass===p);
-      if(!okKey){ $('loginMsg').style.display='block'; return; }
-      CURRENT_ROLE_KEY = okKey;
-      localStorage.setItem('role_key', CURRENT_ROLE_KEY);
-      $('userBadge').textContent = ROLES[CURRENT_ROLE_KEY].name;
-      $('loginMsg').style.display='none';
-      $('pass').value='';
-      hideLogin();
-      bootAfterLogin();
-    }
-    $('logout').onclick = ()=>{
-      localStorage.removeItem('role_key');
-      location.reload();
-    };
+// utils
+const $ = id => document.getElementById(id);
+function fmt(v){return v ?? ''}
 
-    // ======== META (formId para link de Submissions) ========
-    async function loadFormId(){
-      try{
-        const r = await fetch('/api/jotform/meta');
-        const j = await r.json();
-        if(j?.formId) FORM_ID_LINK = j.formId;
-      }catch(_){}
-    }
+// ====== LOGIN ======
+(function paintRoles(){
+  const box = $('roles');
+  box.innerHTML = '';
+  Object.entries(ROLES).forEach(([id, r])=>{
+    const row = document.createElement('div');
+    row.className='role-item';
+    row.innerHTML = `<div>${r.name}</div>
+      <div>
+        <input type="password" id="pwd_${id}" placeholder="Contraseña">
+        <button class="btn approve" onclick="pickRole('${id}')">Elegir</button>
+      </div>`;
+    box.appendChild(row);
+  });
+})();
 
-    // ======== SYNC ========
-    async function sync() {
-      try{
-        const r = await fetch('/api/jotform/list');
-        const data = await r.json();
-        if(!data?.content){ $('tbody').innerHTML='<tr><td colspan="8" style="text-align:center">Sin datos</td></tr>'; return; }
+function pickRole(id){
+  currentRoleId = id;
+  [...document.querySelectorAll('.role-item')].forEach(x => x.style.outline='');
+  $('pwd_'+id).focus();
+}
+$('btnLogin').onclick = () => {
+  if(!currentRoleId){ alert('Seleccione un rol.'); return; }
+  const pwd = $('pwd_'+currentRoleId).value.trim();
+  if(pwd !== ROLES[currentRoleId].pass){ alert('Contraseña incorrecta.'); return; }
+  $('login').style.display='none';
+  $('app').style.display='block';
+  $('who').textContent = ROLES[currentRoleId].name;
+  sync();
+};
+$('logout').onclick = () => { location.reload(); };
 
-        const sedes = new Set();
-        all = data.content.map((sub)=>{
-          const a = sub.answers||{};
-          const nombres   = a['4']?.answer || a['4']?.prettyFormat || '';
-          const apellidos = a['5']?.answer || a['5']?.prettyFormat || '';
-          const sede      = a['2']?.answer || '—';
-          const jornada   = a['3']?.answer || '—';
-          const grado     = a['8']?.answer || '1';
-          const doc       = a['7']?.answer || 'Sin documento';
+// ====== FILTROS UI ======
+const sedesOpt = ['', SEDE_MAP['Sede A'], SEDE_MAP['Sede B'], SEDE_MAP['Sede C'], SEDE_MAP['Sede D']];
+const gradosOpt = ['', '1','2','3','4','5','6','7','8','9','10','11'];
+function fillSelect(sel, options, label){
+  sel.innerHTML = '';
+  options.forEach(v=>{
+    const op = document.createElement('option');
+    op.value = v;
+    op.textContent = v ? v : `Todos ${label}`;
+    sel.appendChild(op);
+  });
+}
+fillSelect($('fSede'), sedesOpt, 'las Sedes');
+fillSelect($('fGrado'), gradosOpt, 'los Grados');
+fillSelect($('fEstado'), ['', ...ESTADOS_UI], 'los Estados');
 
-          // Estado JF: busca por etiqueta "Estado de Aprobación"
-          let estadoJF = '';
-          for(const k in a){
-            const lbl = normalize(a[k]?.text||'');
-            if(lbl.includes('estado de aprobacion')) { estadoJF = a[k]?.answer || ''; break; }
-          }
-          sedes.add(sede);
-          return {
-            submissionId: sub.id,
-            nombre: `${nombres} ${apellidos}`.trim() || 'Sin nombre',
-            documento: doc, grado, sede, jornada,
-            estadoUI: estadoJF || 'Pendiente',
-            estadoJF: estadoJF || '',
-            raw: {a, created_at: sub.created_at}
-          };
-        });
+$('fSede').onchange = $('fGrado').onchange = $('fEstado').onchange = $('fBuscar').oninput = applyFilters;
 
-        // llenamos filtro de sedes
-        const sedeSel = $('sedeF');
-        sedeSel.innerHTML = '<option value="">Todas las Sedes</option>' + [...sedes].map(s=>`<option>${s}</option>`).join('');
+// ====== SYNC (usa tu endpoint serverless) ======
+$('sync').onclick = sync;
 
-        $('lastSync').textContent = 'Última sincronización: ' + new Date().toLocaleString('es-CO');
-        render();
-        note(`Sincronizado (${all.length})`,'success');
-      }catch(e){
-        console.error(e); note('No se pudo sincronizar','error');
-      }
-    }
+async function sync(){
+  $('tbl').style.display='none';
+  $('loading').style.display='flex';
+  try{
+    // Tu serverless debe devolver tal cual la respuesta de Jotform: { content: [ ... ] }
+    const r = await fetch('/api/jotform/list');
+    if(!r.ok) throw new Error('No se pudo leer /api/jotform/list');
+    const data = await r.json();
+    rawList = data.content || [];
 
-    function sortBy(k){
-      if(sortKey===k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
-      render();
-    }
+    // Cargar cambios locales (si quieres conservar reversa offline)
+    const local = JSON.parse(localStorage.getItem('local_changes')||'{}');
 
-    function render(){
-      const sedeF = $('sedeF').value;
-      const gradoF = $('gradoF').value;
-      const estF = $('estadoF').value;
-      const q = ($('busca').value||'').toLowerCase();
+    all = rawList.map(s => mapSubmission(s, local));
+    applyFilters();
+  }catch(e){
+    console.error(e);
+    alert('No pude sincronizar. Revisa el endpoint /api/jotform/list o la consola.');
+    $('loading').style.display='none';
+  }
+}
 
-      // filtro por rol
-      const role = CURRENT_ROLE() || ROLES.admin;
-      let base = [...all];
-      if (!role.canAll) {
-        base = base.filter(s=>{
-          const sedeOk  = !role.sede    || s.sede===role.sede;
-          const jorOk   = !role.jornada || s.jornada===role.jornada;
-          const gradoOk = !role.grados  || role.grados.includes(s.grado);
-          return sedeOk && jorOk && gradoOk;
-        });
-      }
-
-      // filtros UI
-      view = base.filter(s=>{
-        return (!sedeF || s.sede===sedeF) &&
-               (!gradoF || s.grado===gradoF) &&
-               (!estF || s.estadoUI===estF) &&
-               (!q || s.nombre.toLowerCase().includes(q) || (s.documento||'').includes(q));
-      });
-
-      if(sortKey){
-        view.sort((a,b)=>{
-          const va = (a[sortKey]||'').toString().toLowerCase();
-          const vb = (b[sortKey]||'').toString().toLowerCase();
-          if(va<vb) return -1*sortDir;
-          if(va>vb) return  1*sortDir;
-          return 0;
-        });
-      }
-
-      $('stTotal').textContent = view.length;
-      $('stPend').textContent  = view.filter(x=>x.estadoUI==='Pendiente' || x.estadoUI==='En Progreso').length;
-      $('stOk').textContent    = view.filter(x=>x.estadoUI==='Aprobar').length;
-      $('stBad').textContent   = view.filter(x=>x.estadoUI==='Rechazar' || x.estadoUI==='No Aprobado').length;
-
-      const tb = $('tbody');
-      if(view.length===0){ tb.innerHTML = '<tr><td colspan="8" style="text-align:center">Sin resultados</td></tr>'; return; }
-
-      tb.innerHTML = view.map((s,i)=>{
-        const jfUrl = FORM_ID_LINK
-          ? `https://www.jotform.com/submissions/${FORM_ID_LINK}?sid=${s.submissionId}&mode=full`
-          : '#';
-        return `
-        <tr>
-          <td><input type="checkbox" class="rowchk" data-id="${s.submissionId}"></td>
-          <td>${s.nombre}</td>
-          <td>${s.documento}</td>
-          <td>${s.grado}°</td>
-          <td>${s.sede}</td>
-          <td>${s.jornada}</td>
-          <td>
-            <span class="chip ${cls(s.estadoUI)}">UI: ${s.estadoUI||'—'}</span>
-            <span class="chip ${cls(s.estadoJF||'Pendiente')}">JF: ${s.estadoJF||'—'}</span>
-          </td>
-          <td class="actions">
-            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-ok" onclick="act(${i},'Aprobar')">✅</button>`:''}
-            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-bad" onclick="act(${i},'Rechazar')">❌</button>`:''}
-            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-doc" onclick="act(${i},'Solicitar Documentos')">📄</button>`:''}
-            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-lock" onclick="act(${i},'Bloqueado')">🔒</button>`:''}
-            ${(!['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-rev" onclick="reversar(${i})">↩</button>`:''}
-            <button class="btn-info" onclick="ver(${i})">Ver</button>
-            ${FORM_ID_LINK ? `<a class="btn-info" style="text-decoration:none;padding:10px" target="_blank" href="${jfUrl}">📬 JF</a>`:''}
-          </td>
-        </tr>`;
-      }).join('');
-    }
-
-    async function act(idx, nuevoEstado){
-      const row = view[idx];
-      const reg = all.find(x=>x.submissionId===row.submissionId);
-      if(!reg) return;
-
-      // permiso por rol
-      const role = CURRENT_ROLE() || ROLES.admin;
-      if (!role.canAll) {
-        const sedeOk  = !role.sede    || reg.sede===role.sede;
-        const jorOk   = !role.jornada || reg.jornada===role.jornada;
-        const gradoOk = !role.grados  || role.grados.includes(reg.grado);
-        if(!(sedeOk && jorOk && gradoOk)){ note('No tienes permiso para esta acción','error'); return; }
-      }
-
-      if(ALLOWED_STATES.length && !ALLOWED_STATES.includes(nuevoEstado)){
-        note(`"${nuevoEstado}" no coincide con las opciones`, 'error'); return;
-      }
-
-      // UI optimista
-      reg.estadoUI = nuevoEstado; render();
-
-      try{
-        const verificado = await actualizarEstadoEnJotform(reg.submissionId, nuevoEstado);
-        reg.estadoJF = verificado || nuevoEstado;
-        render();
-        await enviarCorreoCambioEstado(reg, nuevoEstado);
-        note('Actualizado ✔','success');
-      }catch(e){
-        console.error(e); note('No se pudo escribir en Jotform','error');
-      }
-    }
-
-    function reversar(idx){
-      const motivo = prompt('Motivo para reversar a Pendiente:');
-      if(motivo===null) return;
-      act(idx,'Pendiente').then(()=>{
-        const row = view[idx];
-        const log = JSON.parse(localStorage.getItem('audit_log')||'[]');
-        log.push({ submissionId: row.submissionId, accion: 'Reversar', motivo, fecha: new Date().toISOString() });
-        localStorage.setItem('audit_log', JSON.stringify(log));
-        note('Reversado con motivo guardado','success');
-      });
-    }
-
-    // === Proxy update ===
-    async function actualizarEstadoEnJotform(submissionId, nuevoEstado) {
-      const payload = { submissionId, formId: 'env', value: nuevoEstado };
-      const resp = await fetch('/api/jotform/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': PROXY_TOKEN },
-        body: JSON.stringify(payload)
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data?.error || 'Error JF');
-      return data.verified;
-    }
-
-    // === Emails ===
-    async function enviarCorreoCambioEstado(registro, nuevoEstado){
-      try{
-        const a = registro.raw?.a || {};
-        const email = a['22']?.answer || a['38']?.answer || '';
-        if(!email) return;
-
-        const subject = {
-          'Aprobar': '✅ Inscripción aprobada',
-          'Rechazar': '❌ Inscripción no aprobada',
-          'Solicitar Documentos': '📄 Faltan documentos para tu inscripción',
-          'Bloqueado': '🔒 Inscripción bloqueada',
-          'Pendiente': '↩ Tu inscripción fue reversada a Pendiente'
-        }[nuevoEstado] || `Actualización de estado: ${nuevoEstado}`;
-
-        const html = `
-          <p>Hola ${registro.nombre},</p>
-          <p>Tu estado de inscripción cambió a: <b>${nuevoEstado}</b>.</p>
-          <p>Sede: ${registro.sede} — Jornada: ${registro.jornada} — Grado: ${registro.grado}°</p>
-          <p>Si tienes dudas, responde a este correo.</p>
-        `;
-
-        await fetch('/api/notify/send', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json', 'X-Auth-Token': PROXY_TOKEN },
-          body: JSON.stringify({ to: email, subject, html })
-        });
-      }catch(e){ console.warn('No se pudo enviar correo:', e); }
-    }
-
-    // === Adjuntos: convierte answer a array de URLs ===
-    function listUrls(ans){
-      if(!ans) return [];
-      if(Array.isArray(ans)) return ans;
-      if(typeof ans === 'string'){
-        // separador por coma o salto de línea
-        return ans.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
-      }
-      return [];
-    }
-
-    // === Ficha ===
-    function ver(idx){
-      const s = view[idx];
-      $('mTitle').textContent = s.nombre;
-      const a = s.raw?.a || {};
-      const get = (k, alt='—') => a[k]?.answer || a[k]?.prettyFormat || alt;
-
-      const nombres   = get('4','');
-      const apellidos = get('5','');
-      const tipoDoc   = get('98','');
-      const doc       = s.documento || '—';
-      const genero    = get('6','');
-      const fnac      = get('10','');
-      const edad      = get('11','');
-      const rh        = get('10','');
-
-      const grado     = s.grado || '—';
-      const sede      = s.sede  || '—';
-      const jornada   = s.jornada || '—';
-      const idUnico   = get('96','No asignado');
-
-      const email     = get('22', get('17',''));
-      const cel       = get('21', get('29',''));
-      const dir       = get('12','');
-      const barrio    = get('13','');
-      const ciudad    = get('15','');
-      const estrato   = get('14','');
-
-      const acudiente = get('35','');
-      const docAcud   = get('36','');
-      const telAcud   = get('37','');
-      const emailAcud = get('38','');
-      const parentesc = get('42','');
-
-      const madreNom  = get('19','');
-      const madreCel  = get('21','');
-      const padreNom  = get('27','');
-      const padreCel  = get('29','');
-
-      const eps       = get('44','');
-      const sisben    = get('45','');
-      const etnia     = get('46','');
-      const disca     = get('47','Ninguna');
-      const despl     = get('48','No');
-
-      const foto      = listUrls(get('73',''));
-      const boletin   = listUrls(get('61',''));
-      const docIdent  = listUrls(get('62',''));
-      const obs       = get('64','');
-
-      const linkList = (arr,label)=> arr.length ? arr.map(u=>`<a target="_blank" href="${u}">📎 ${label}</a>`).join('<br>') : '—';
-
-      $('mBody').innerHTML = `
-        <div style="text-align:center;margin:8px 0 12px">
-          ${foto.length ? `<img src="${foto[0]}" style="max-width:120px;border-radius:10px;border:3px solid #667eea">` : '📄'}
-        </div>
-
-        <h2 style="text-align:center;margin:0 0 6px">${s.nombre}</h2>
-        <div style="text-align:center;margin-bottom:14px">
-          <span class="chip ${cls(s.estadoUI)}" style="font-size:14px"> ${s.estadoUI}</span>
-        </div>
-
-        <div style="background:#f8f9fa;padding:14px;border-radius:10px;margin:10px 0">
-          <h3 style="margin:0 0 8px;color:#3f51b5">👤 DATOS PERSONALES</h3>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-            <div><b>Nombres:</b> ${nombres}</div>
-            <div><b>Apellidos:</b> ${apellidos}</div>
-            <div><b>Documento:</b> ${doc}</div>
-            <div><b>Tipo Doc:</b> ${tipoDoc||'—'}</div>
-            <div><b>Género:</b> ${genero||'—'}</div>
-            <div><b>Fecha Nacimiento:</b> ${fnac||'—'}</div>
-            <div><b>Edad:</b> ${edad||'—'}</div>
-            <div><b>RH:</b> ${rh||'—'}</div>
-            <div><b>Email:</b> ${email||'—'}</div>
-            <div><b>Celular:</b> ${cel||'—'}</div>
-          </div>
-        </div>
-
-        <div style="background:#e3f2fd;padding:14px;border-radius:10px;margin:10px 0">
-          <h3 style="margin:0 0 8px;color:#1976d2">🎓 INFORMACIÓN ACADÉMICA</h3>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-            <div><b>Grado a Inscribir:</b> ${grado}°</div>
-            <div><b>Sede:</b> ${sede}</div>
-            <div><b>Jornada:</b> ${jornada}</div>
-            <div><b>ID Único:</b> ${idUnico}</div>
-          </div>
-        </div>
-
-        <div style="background:#f3e5f5;padding:14px;border-radius:10px;margin:10px 0">
-          <h3 style="margin:0 0 8px;color:#7b1fa2">📞 INFORMACIÓN DE CONTACTO</h3>
-          <div><b>Dirección:</b> ${dir||'—'}</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px">
-            <div><b>Barrio:</b> ${barrio||'—'}</div>
-            <div><b>Ciudad:</b> ${ciudad||'—'}</div>
-            <div><b>Estrato:</b> ${estrato||'—'}</div>
-          </div>
-        </div>
-
-        <div style="background:#e8f5e9;padding:14px;border-radius:10px;margin:10px 0">
-          <h3 style="margin:0 0 8px;color:#2e7d32">👨‍👩‍👧 ACUDIENTE</h3>
-          <div><b>Nombre:</b> ${acudiente||'—'}</div>
-          <div><b>Documento:</b> ${docAcud||'—'}</div>
-          <div><b>Tel:</b> ${telAcud||'—'}</div>
-          <div><b>Email:</b> ${emailAcud||'—'}</div>
-          <div><b>Parentesco:</b> ${parentesc||'—'}</div>
-        </div>
-
-        <div style="background:#fff3e0;padding:14px;border-radius:10px;margin:10px 0">
-          <h3 style="margin:0 0 8px;color:#e65100">👨‍👩‍👦 PADRES</h3>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
-            <div><b>Madre:</b> ${madreNom||'—'} <b>Cel:</b> ${madreCel||'—'}</div>
-            <div><b>Padre:</b> ${padreNom||'—'} <b>Cel:</b> ${padreCel||'—'}</div>
-          </div>
-        </div>
-
-        <div style="background:#fce4ec;padding:14px;border-radius:10px;margin:10px 0">
-          <h3 style="margin:0 0 8px;color:#c2185b">🏥 MÉDICA / SOCIAL</h3>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-            <div><b>EPS/IPS:</b> ${eps||'—'}</div>
-            <div><b>Sisbén:</b> ${sisben||'—'}</div>
-            <div><b>Etnia:</b> ${etnia||'—'}</div>
-            <div><b>Discapacidad:</b> ${disca||'—'}</div>
-            <div><b>Desplazado:</b> ${despl||'—'}</div>
-          </div>
-        </div>
-
-        <div style="background:#fff9c4;padding:14px;border-radius:10px;margin:10px 0;border:2px solid #f9a825">
-          <h3 style="margin:0 0 8px;color:#f57c00">📎 DOCUMENTOS ADJUNTOS</h3>
-          <div style="margin:6px 0"><b>Foto(s):</b><br>${linkList(foto,'Foto')}</div>
-          <div style="margin:6px 0"><b>Boletín(es):</b><br>${linkList(boletin,'Boletín')}</div>
-          <div style="margin:6px 0"><b>Documento(s) de identidad:</b><br>${linkList(docIdent,'Documento')}</div>
-        </div>
-
-        ${obs ? `<div style="background:#e1f5fe;padding:14px;border-radius:10px;margin:10px 0">
-          <h3 style="margin:0 0 8px;color:#0277bd">📝 OBSERVACIONES</h3>${obs}
-        </div>` : ''}
-
-        <div style="text-align:center;margin-top:10px;color:#6b7280">
-          <b>ID de envío:</b> ${s.submissionId}
-        </div>
-      `;
-      $('modal').style.display='block';
-    }
-    $('mClose').onclick = ()=> $('modal').style.display='none';
-    window.onclick = e => { if(e.target===$('modal')) $('modal').style.display='none'; };
-
-    // === MASIVO ===
-    $('chkAll').onclick = (e)=> document.querySelectorAll('.rowchk').forEach(c=> c.checked = e.target.checked);
-    async function bulk(estado){
-      const ids = [...document.querySelectorAll('.rowchk:checked')].map(c=>c.dataset.id);
-      if(ids.length===0){ note('No hay seleccionados','error'); return; }
-      for(const id of ids){
-        const idx = view.findIndex(x=>x.submissionId===id);
-        if(idx>=0) await act(idx, estado);
-      }
-      note(`Listo: ${estado} (${ids.length})`,'success');
-    }
-
-    // === EXPORTAR EXCEL ===
-    function exportarExcel(){
-      if(view.length===0){ note('No hay datos','error'); return; }
-      const data = view.map(s=>({
-        Nombre: s.nombre,
-        Documento: s.documento,
-        Grado: s.grado,
-        Sede: s.sede,
-        Jornada: s.jornada,
-        Estado_UI: s.estadoUI,
-        Estado_JF: s.estadoJF || ''
-      }));
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Estudiantes");
-      XLSX.writeFile(wb, "estudiantes.xlsx");
-    }
-
-    // === Listeners UI ===
-    $('busca').oninput  = render;
-    $('sedeF').onchange = render;
-    $('gradoF').onchange = render;
-    $('estadoF').onchange = render;
-    $('sync').onclick   = ()=>{ note('Sincronizando…','info'); sync(); };
-    $('bulkOk').onclick = ()=> bulk('Aprobar');
-    $('bulkBad').onclick = ()=> bulk('Rechazar');
-    $('bulkRev').onclick = ()=> bulk('Pendiente');
-    $('export').onclick = exportarExcel;
-
-    async function bootAfterLogin(){
-      $('userBadge').textContent = (CURRENT_ROLE()||ROLES.admin).name;
-      await loadFormId();
-      await sync();
-      setInterval(sync, 180000);
-    }
-
-    // Arranque
-    document.addEventListener('DOMContentLoaded', async ()=>{
-      if(CURRENT_ROLE_KEY){ $('userBadge').textContent = ROLES[CURRENT_ROLE_KEY].name; hideLogin(); await bootAfterLogin(); }
-      else { showLogin(); }
+function mapSubmission(s, local){
+  const a = s.answers || s.answer || s?.raw?.a || {};
+  // Helpers por etiqueta
+  const byLabel = (keys, fb='') => {
+    const arr = Array.isArray(keys)?keys:[keys];
+    const hit = Object.values(a).find(x=>{
+      const t = (x?.text||'').toLowerCase();
+      return arr.every(k => t.includes(k.toLowerCase()));
     });
-  </script>
+    return hit?.answer || hit?.prettyFormat || fb;
+  };
+  // Adjuntos
+  const toUrls = (v)=> {
+    if(!v) return [];
+    if(Array.isArray(v)) return v.filter(Boolean);
+    if(typeof v==='string') return v.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+    return [];
+  };
+
+  const nombres   = byLabel(['nombres','nombre']);
+  const apellidos = byLabel(['apellidos','apellido']);
+  const nombre    = (nombres + ' ' + apellidos).trim() || 'Sin nombre';
+  const documento = byLabel(['documento','doc']);
+  const grado     = byLabel(['grado']);
+  const sede      = byLabel(['sede']);
+  const jornada   = byLabel(['jornada']);
+
+  // Estado desde “Estado de Aprobación”
+  let estadoJF   = byLabel(['estado de aprobación','estado','aprobación']);
+  if(!estadoJF) estadoJF = s.flowStatus || '';
+
+  // Normalizar a UI
+  let estadoUI = 'Pendiente';
+  const low = (estadoJF||'').toLowerCase();
+  if(low.includes('aproba')) estadoUI='Aprobado';
+  else if(low.includes('rechaz')) estadoUI='Rechazado';
+  else if(low.includes('solicit')) estadoUI='Solicitar Documentos';
+  else if(low.includes('bloque')) estadoUI='Bloqueado';
+  else if(low.includes('progre')) estadoUI='En Progreso';
+
+  // Aplicar override local si existe
+  if(local[s.id]?.estadoUI) estadoUI = local[s.id].estadoUI;
+
+  // Adjuntos posibles
+  const boletin = toUrls(byLabel(['boletín','boletin']) || a['61']?.answer);
+  const docid   = toUrls(byLabel(['documento de identidad','identidad']) || a['62']?.answer);
+  const foto    = toUrls(byLabel(['foto']) || a['73']?.answer);
+
+  return {
+    submissionId: s.id,
+    createdAt: s.created_at,
+    raw:{s, a},
+    nombre, documento, grado, sede, jornada,
+    estadoUI,
+    adjuntos:{boletin, docid, foto}
+  };
+}
+
+function applyFilters(){
+  const role = ROLES[currentRoleId];
+  const sedeF = $('fSede').value;
+  const gradoF = $('fGrado').value;
+  const estadoF = $('fEstado').value;
+  const q = $('fBuscar').value.toLowerCase();
+
+  // Base: según rol
+  let base = role.canAll ? all.slice() : all.filter(s=>{
+    const sedeOK = role.sede ? s.sede===role.sede : true;
+    const jorOK  = role.jornada ? s.jornada===role.jornada : true;
+    return sedeOK && jorOK;
+  });
+
+  // Filtros UI
+  if(sedeF) base = base.filter(s=> s.sede===sedeF);
+  if(gradoF) base = base.filter(s=> s.grado==gradoF);
+  if(estadoF) base = base.filter(s=> s.estadoUI===estadoF);
+  if(q) base = base.filter(s=> (s.nombre||'').toLowerCase().includes(q) || (s.documento||'').includes(q));
+
+  view = base;
+  paintTable();
+  updateStats();
+}
+
+function paintTable(){
+  const tb = $('tbody');
+  tb.innerHTML = '';
+  view.forEach((s, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" class="chk" data-i="${i}"></td>
+      <td>${fmt(s.nombre)}</td>
+      <td>${fmt(s.documento)}</td>
+      <td>${fmt(s.grado)}°</td>
+      <td>${fmt(s.sede)}</td>
+      <td>${fmt(s.jornada)}</td>
+      <td><span class="${ESTADO_CLASS(s.estadoUI)}">${s.estadoUI}</span></td>
+      <td class="actions">
+        <button class="btn-sm btn-info" onclick="ver(${i})">Ver</button>
+        <button class="btn-sm btn-ok" onclick="cambiarEstado(${i}, 'Aprobado')">✓</button>
+        <button class="btn-sm btn-bad" onclick="cambiarEstado(${i}, 'Rechazado')">✕</button>
+        <button class="btn-sm btn-lock" onclick="cambiarEstado(${i}, 'Bloqueado')">🔒</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+  $('loading').style.display='none';
+  $('tbl').style.display='table';
+  $('chkAll').checked=false;
+}
+
+function updateStats(){
+  const tot=view.length;
+  const pen=view.filter(s=> s.estadoUI==='Pendiente'||s.estadoUI==='En Progreso').length;
+  const apr=view.filter(s=> s.estadoUI==='Aprobado').length;
+  const rej=view.filter(s=> s.estadoUI==='Rechazado').length;
+  $('sTot').textContent=tot; $('sPen').textContent=pen; $('sApr').textContent=apr; $('sRej').textContent=rej;
+}
+
+// ====== Exportar Excel (.xls compatible) ======
+$('xport').onclick = ()=>{
+  // Construimos una tabla mínima HTML y la servimos como .xls
+  let html = `<table border="1"><thead><tr>
+  <th>Nombre</th><th>Documento</th><th>Grado</th><th>Sede</th><th>Jornada</th><th>Estado</th></tr></thead><tbody>`;
+  view.forEach(s=>{
+    html += `<tr><td>${fmt(s.nombre)}</td><td>${fmt(s.documento)}</td><td>${fmt(s.grado)}</td>
+    <td>${fmt(s.sede)}</td><td>${fmt(s.jornada)}</td><td>${fmt(s.estadoUI)}</td></tr>`;
+  });
+  html += `</tbody></table>`;
+  const blob = new Blob([`\ufeff`+html], {type:'application/vnd.ms-excel'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='estudiantes.xls'; a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ====== Selección masiva ======
+$('chkAll').onchange = e=>{
+  document.querySelectorAll('.chk').forEach(ch=> ch.checked = e.target.checked);
+};
+$('apSel').onclick = ()=> bulk('Aprobado');
+$('reSel').onclick = ()=> bulk('Rechazado');
+$('rvSel').onclick = ()=> bulk('Pendiente');
+
+function bulk(estado){
+  const idx = [...document.querySelectorAll('.chk')].filter(c=>c.checked).map(c=> parseInt(c.dataset.i));
+  if(!idx.length) return alert('Selecciona al menos un estudiante.');
+  idx.forEach(i=> cambiarEstado(i, estado, true));
+  alert('Se enviaron las actualizaciones. Si alguna falla, revisa la consola.');
+}
+
+// ====== UPDATE estado (usa tu /api/jotform/update) ======
+async function cambiarEstado(i, nuevo, silent=false){
+  const s = view[i];
+  try{
+    const r = await fetch('/api/jotform/update', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ submissionId: s.submissionId, estado: nuevo })
+    });
+    const j = await r.json().catch(()=> ({}));
+    if(!r.ok){
+      if(!silent) alert('Error actualizando en Jotform: '+(j?.message||r.status));
+      console.warn('Proxy →', j);
+      return;
+    }
+    // guarda cambio local para que persista aunque resync
+    const local = JSON.parse(localStorage.getItem('local_changes')||'{}');
+    local[s.submissionId] = {estadoUI:nuevo, fecha: new Date().toISOString()};
+    localStorage.setItem('local_changes', JSON.stringify(local));
+
+    // reflejar en la vista actual
+    s.estadoUI = nuevo;
+    paintTable(); updateStats();
+  }catch(e){
+    if(!silent) alert('No se pudo actualizar. Revisa consola.');
+    console.error(e);
+  }
+}
+
+// ====== Detalle (ficha) ======
+const backdrop = $('backdrop'); const modal = $('modal');
+function closeModal(){ backdrop.style.display='none'; modal.style.display='none'; }
+
+function jotformPdfUrl(submissionId){ return `https://www.jotform.com/pdf-submission/${submissionId}`; }
+
+function getByLabel(keys, answers, fb=''){
+  const arr = Array.isArray(keys)?keys:[keys];
+  const hit = Object.values(answers).find(x=>{
+    const t=(x?.text||'').toLowerCase();
+    return arr.every(k=> t.includes(k.toLowerCase()));
+  });
+  return hit?.answer || hit?.prettyFormat || fb;
+}
+function urlsFrom(answer){
+  if(!answer) return [];
+  if(Array.isArray(answer)) return answer.filter(Boolean);
+  if(typeof answer==='string') return answer.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+  return [];
+}
+
+function ver(i){
+  const s = view[i];
+  const a = s.raw?.a || s.raw?.s?.answers || {};
+
+  const nombres    = getByLabel(['nombres','nombre'], a, '');
+  const apellidos  = getByLabel(['apellidos','apellido'], a, '');
+  const tipoDoc    = getByLabel(['tipo','doc'], a, '');
+  const genero     = getByLabel(['género','genero'], a, '');
+  const fnacimiento= getByLabel(['fecha','nacimiento'], a, '');     // corregido
+  const rh         = getByLabel(['rh','grupo'], a, '');
+  const edad       = getByLabel(['edad'], a, '');
+
+  const email      = getByLabel(['email','correo'], a, '') || a['22']?.answer || a['17']?.answer || '';
+  const celular    = getByLabel(['celular','tel','telefono'], a, '') || a['21']?.answer || a['29']?.answer || '';
+  const direccion  = getByLabel(['dirección','direccion'], a, '');
+  const barrio     = getByLabel(['barrio'], a, '');
+  const ciudad     = getByLabel(['ciudad'], a, '');
+  const estrato    = getByLabel(['estrato'], a, '');
+
+  const grado      = s.grado || getByLabel(['grado'], a, '—');
+  const sede       = s.sede  || getByLabel(['sede'], a, '—');
+  const jornada    = s.jornada || getByLabel(['jornada'], a, '—');
+  const idUnico    = getByLabel(['id','único','unico'], a, 'No asignado'); // corregido
+
+  const acudiente  = getByLabel(['acudiente','responsable'], a, '');
+  const docAcud    = getByLabel(['documento','acudiente'], a, '');
+  const telAcud    = getByLabel(['tel','acudiente'], a, '');
+  const emailAcud  = getByLabel(['email','acudiente'], a, '');
+  const parentesco = getByLabel(['parentesco'], a, '');
+
+  const madreNom   = getByLabel(['nombre','madre'], a, '');
+  const madreCel   = getByLabel(['celular','madre'], a, '');
+  const padreNom   = getByLabel(['nombre','padre'], a, '');
+  const padreCel   = getByLabel(['celular','padre'], a, '');
+
+  const eps        = getByLabel(['eps','ips'], a, '');
+  const sisben     = getByLabel(['sisben','sisbén'], a, '');
+  const etnia      = getByLabel(['etnia'], a, '');
+  const discapacidad = getByLabel(['discapacidad'], a, 'Ninguna');
+  const desplazado   = getByLabel(['desplazado'], a, 'No');
+
+  const boletines = urlsFrom( getByLabel(['boletín','boletin'], a) || a['61']?.answer );
+  const documentos = urlsFrom( getByLabel(['documento de identidad','identidad'], a) || a['62']?.answer );
+  const fotos = urlsFrom( getByLabel(['foto'], a) || a['73']?.answer );
+
+  const obs       = getByLabel(['observaciones','observación','observacion'], a, '');
+
+  const avatar = fotos[0] ? `<img src="${fotos[0]}" class="avatar">`
+                          : `<div class="avatar" style="display:flex;align-items:center;justify-content:center;font-size:26px; color:#667eea">👤</div>`;
+  const estadoChip = `<span class="${ESTADO_CLASS(s.estadoUI)}" style="font-size:13px">${s.estadoUI}</span>`;
+  const pdfUrl = jotformPdfUrl(s.submissionId);
+
+  $('mBody').innerHTML = `
+    <div class="headline">
+      ${avatar}
+      <div>
+        <div class="title-xl">${fmt((nombres+' '+apellidos).trim() || s.nombre)}</div>
+        <div class="subchips">
+          ${estadoChip}
+          <span class="chip tag">Documento: ${fmt(s.documento)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section slate">
+      <h3 style="margin:0 0 8px;color:#0f172a">👤 DATOS PERSONALES</h3>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div><b>Nombres:</b> ${fmt(nombres)}</div>
+        <div><b>Apellidos:</b> ${fmt(apellidos)}</div>
+        <div><b>Tipo Doc:</b> ${fmt(tipoDoc)}</div>
+        <div><b>Género:</b> ${fmt(genero)}</div>
+        <div><b>Fecha Nacimiento:</b> ${fmt(fnacimiento)}</div>
+        <div><b>Edad:</b> ${fmt(edad)}</div>
+        <div><b>RH:</b> ${fmt(rh)}</div>
+        <div><b>Email:</b> ${fmt(email)}</div>
+        <div><b>Celular:</b> ${fmt(celular)}</div>
+      </div>
+    </div>
+
+    <div class="section blue">
+      <h3 style="margin:0 0 8px;color:#1d4ed8">🎓 INFORMACIÓN ACADÉMICA</h3>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div><b>Grado a Inscribir:</b> ${fmt(grado)}°</div>
+        <div><b>Sede:</b> ${fmt(sede)}</div>
+        <div><b>Jornada:</b> ${fmt(jornada)}</div>
+        <div><b>ID Único:</b> ${fmt(idUnico)}</div>
+      </div>
+    </div>
+
+    <div class="section indigo">
+      <h3 style="margin:0 0 8px;color:#3730a3">📞 INFORMACIÓN DE CONTACTO</h3>
+      <div><b>Dirección:</b> ${fmt(direccion)}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px">
+        <div><b>Barrio:</b> ${fmt(barrio)}</div>
+        <div><b>Ciudad:</b> ${fmt(ciudad)}</div>
+        <div><b>Estrato:</b> ${fmt(estrato)}</div>
+      </div>
+    </div>
+
+    <div class="section slate">
+      <h3 style="margin:0 0 8px;color:#0f172a">👨‍👩‍👧 ACUDIENTE</h3>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div><b>Nombre:</b> ${fmt(acudiente)}</div>
+        <div><b>Parentesco:</b> ${fmt(parentesco)}</div>
+        <div><b>Documento:</b> ${fmt(docAcud)}</div>
+        <div><b>Teléfono:</b> ${fmt(telAcud)}</div>
+        <div><b>Email:</b> ${fmt(emailAcud)}</div>
+      </div>
+    </div>
+
+    <div class="section blue">
+      <h3 style="margin:0 0 8px;color:#1d4ed8">👨‍👩‍👦 PADRES</h3>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div><b>Madre:</b> ${fmt(madreNom)} — <b>Cel:</b> ${fmt(madreCel)}</div>
+        <div><b>Padre:</b> ${fmt(padreNom)} — <b>Cel:</b> ${fmt(padreCel)}</div>
+      </div>
+    </div>
+
+    <div class="section indigo">
+      <h3 style="margin:0 0 8px;color:#3730a3">🏥 MÉDICA / SOCIAL</h3>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div><b>EPS/IPS:</b> ${fmt(eps)}</div>
+        <div><b>Sisbén:</b> ${fmt(sisben)}</div>
+        <div><b>Etnia:</b> ${fmt(etnia)}</div>
+        <div><b>Discapacidad:</b> ${fmt(discapacidad)}</div>
+        <div><b>Desplazado:</b> ${fmt(desplazado)}</div>
+      </div>
+    </div>
+
+    <div class="section slate">
+      <h3 style="margin:0 0 8px;color:#0f172a">📎 ARCHIVOS DEL ESTUDIANTE</h3>
+      <div class="link-list" style="margin-bottom:6px">
+        <b>Boletín:</b>
+        ${s.adjuntos.boletin.length ? s.adjuntos.boletin.map(u=>`<a target="_blank" href="${u}">📄 Ver</a>`).join('') : ' —'}
+      </div>
+      <div class="link-list" style="margin-bottom:6px">
+        <b>Documento de identidad:</b>
+        ${s.adjuntos.docid.length ? s.adjuntos.docid.map(u=>`<a target="_blank" href="${u}">🆔 Ver</a>`).join('') : ' —'}
+      </div>
+
+      <div style="margin-top:8px">
+        <b>PDF de la inscripción:</b>
+        <a target="_blank" href="${pdfUrl}">Abrir / Descargar</a>
+      </div>
+      <div class="embed-box" style="margin-top:8px">
+        <iframe src="${pdfUrl}" style="width:100%;height:420px;border:0" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    ${obs ? `<div class="section indigo"><h3 style="margin:0 0 8px;color:#3730a3">📝 OBSERVACIONES</h3>${obs}</div>` : ''}
+
+    <div style="text-align:center;margin-top:10px;color:#6b7280">
+      <b>ID de envío:</b> ${s.submissionId}
+    </div>
+  `;
+  backdrop.style.display='block'; modal.style.display='block';
+}
+</script>
 </body>
 </html>
