@@ -18,6 +18,7 @@
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     button,select,input{padding:10px;border-radius:10px;border:2px solid #e5e7eb;font-size:14px}
     button{background:#6970f6;color:#fff;border:none;cursor:pointer} button:hover{opacity:.92}
+    .ghost{background:#e5e7eb;color:#111}
     .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
     .stat{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.06)}
     .stat .n{font-size:30px;font-weight:900;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -35,54 +36,51 @@
     .btn-ok{background:#28a745} .btn-bad{background:#dc3545} .btn-doc{background:#ff9800} .btn-lock{background:#9e9e9e} .btn-rev{background:#6b7280} .btn-info{background:#17a2b8}
     .note{position:fixed;right:20px;top:20px;padding:12px 16px;border-radius:10px;color:#fff;display:none;box-shadow:0 10px 20px rgba(0,0,0,.2);z-index:99}
     .note.success{background:#16a34a} .note.error{background:#dc2626} .note.info{background:#0284c7}
-    /* Modal */
+    /* Modal ficha */
     .modal{display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:999}
     .modal-card{background:#fff;border-radius:14px;max-width:920px;margin:40px auto;padding:18px 20px;max-height:85vh;overflow:auto}
     .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
     .close{cursor:pointer;font-size:22px}
-    /* Login overlay */
-    .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#667eeaAA,#764ba2AA);display:flex;align-items:center;justify-content:center;z-index:1200}
-    .login-box{background:#fff;border-radius:18px;box-shadow:0 20px 40px rgba(0,0,0,.18);width:100%;max-width:420px;padding:24px}
-    .login-box h2{margin:0 0 10px}
-    .hint{color:#64748b;font-size:12px;margin-top:8px}
-    .logout{background:#ef4444}
+    /* Login modal */
+    .login{display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:1000}
+    .login-card{background:#fff;border-radius:14px;max-width:420px;margin:8% auto;padding:22px}
+    .hint{font-size:12px;color:#6b7280}
     @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:600px){.grid{grid-template-columns:1fr} th,td{font-size:12px;padding:9px}}
   </style>
 </head>
 <body>
   <!-- LOGIN -->
-  <div class="login-overlay" id="loginOverlay" style="display:none">
-    <div class="login-box">
-      <h2>🔐 Ingreso por Rol</h2>
-      <p style="margin:6px 0 12px;color:#475569">Elija su rol e ingrese su contraseña.</p>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <select id="loginRole">
-          <option value="admin">Administrador</option>
-          <option value="sedeA_m">Sede A – Jornada Mañana</option>
-          <option value="sedeA_t">Sede A – Jornada Tarde</option>
-          <option value="sedeB">Sede B</option>
-          <option value="sedeC">Sede C</option>
-          <option value="sedeD">Sede D</option>
-        </select>
-        <input id="loginPass" type="password" placeholder="Contraseña">
-        <button id="btnLogin">Ingresar</button>
-        <div class="hint">* Para máxima seguridad, podemos mover este login al backend cuando quieras.</div>
+  <div class="login" id="login">
+    <div class="login-card">
+      <h2 style="margin:0 0 6px">🔐 Ingreso</h2>
+      <p class="hint" style="margin:0 0 12px">Escribe tu contraseña de coordinador o de administrador.</p>
+      <input id="pass" type="password" placeholder="Contraseña…" style="width:100%;margin-bottom:10px">
+      <div class="row" style="justify-content:flex-end">
+        <button class="ghost" onclick="cancelLogin()">Cancelar</button>
+        <button onclick="doLogin()">Ingresar</button>
+      </div>
+      <div id="loginMsg" class="hint" style="color:#dc2626;margin-top:8px;display:none">Contraseña inválida</div>
+      <hr style="margin:14px 0; border:none; border-top:1px solid #eee">
+      <div class="hint">
+        Roles disponibles (ejemplo):<br>
+        <b>Administrador</b>, <b>Sede A Mañana</b>, <b>Sede A Tarde</b>, <b>Sede B</b>, <b>Sede C</b>, <b>Sede D</b>.
       </div>
     </div>
   </div>
 
-  <div class="container">
+  <!-- APP -->
+  <div class="container" id="app" style="display:none">
     <div class="card">
       <div class="header">
         <div class="title">🎓 Colegio Técnico Vicente Azuero – Aprobaciones</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <div class="badge" id="userBadge">—</div>
-          <button id="btnLogout" class="logout">Cerrar sesión</button>
+          <div class="badge" id="userBadge">Rol</div>
+          <button class="ghost" id="logout">Cerrar sesión</button>
         </div>
       </div>
 
-      <!-- Barra superior -->
+      <!-- Barra de acciones -->
       <div class="panel">
         <div class="row">
           <button id="sync">🔄 Sincronizar</button>
@@ -152,29 +150,37 @@
   <div id="note" class="note"></div>
 
   <script>
-    // ====== CONFIG GENERAL ======
-    const PROXY_TOKEN = '12345-seguro'; // igual a PROXY_SECRET en Vercel
+    // ========= AJUSTA ESTO A TUS SEDES REALES =========
+    // Mapa de alias "Sede A/B/C/D" a los textos exactos que llegan desde Jotform.
+    const SEDE_MAP = {
+      'Sede A': 'Colegio Tecnico Vicente Azuero - Lagos 2',
+      'Sede B': 'Colegio Tecnico Vicente Azuero - Principal',
+      'Sede C': 'Instituto Andres Bello - Lagos 1',
+      'Sede D': 'Instituto Juan Pablo I - Lagos 2'
+    };
+
+    // ========= ROLES+CONTRASEÑAS ==========
+    const ROLES = {
+      admin:        { name:'Administrador', pass:'admin123', canAll:true },
+      sedeA_manana: { name:'Sede A – Mañana', pass:'aM2024', sede:SEDE_MAP['Sede A'], jornada:'Mañana' },
+      sedeA_tarde:  { name:'Sede A – Tarde',  pass:'aT2024', sede:SEDE_MAP['Sede A'], jornada:'Tarde' },
+      sedeB:        { name:'Sede B',          pass:'b2024',  sede:SEDE_MAP['Sede B'] },
+      sedeC:        { name:'Sede C',          pass:'c2024',  sede:SEDE_MAP['Sede C'] },
+      sedeD:        { name:'Sede D',          pass:'d2024',  sede:SEDE_MAP['Sede D'] },
+    };
+    let CURRENT_ROLE_KEY = localStorage.getItem('role_key') || null;
+    const CURRENT_ROLE = ()=> CURRENT_ROLE_KEY ? ROLES[CURRENT_ROLE_KEY] : null;
+
+    // ========= PROXY TOKEN (mismo que PROXY_SECRET en Vercel) =========
+    const PROXY_TOKEN = '12345-seguro';
     const ALLOWED_STATES = ['Pendiente','Aprobar','Rechazar','Solicitar Documentos','Bloqueado','En Progreso'];
 
-    // ====== ROLES (según tu formulario) ======
-    // Ajusta los nombres EXACTOS como vienen en el campo "Sede" y "Jornada" de Jotform
-    const ROLES = {
-      admin: { name: 'Administrador', canAll: true, pass: 'ADMIN123' },
-      sedeA_m: { name: 'Sede A – Mañana', sede: 'Sede A', jornada: 'Mañana', pass: 'A-MANANA' },
-      sedeA_t: { name: 'Sede A – Tarde',  sede: 'Sede A', jornada: 'Tarde',  pass: 'A-TARDE' },
-      sedeB:   { name: 'Sede B',          sede: 'Sede B', pass: 'B-OK' },
-      sedeC:   { name: 'Sede C',          sede: 'Sede C', pass: 'C-OK' },
-      sedeD:   { name: 'Sede D',          sede: 'Sede D', pass: 'D-OK' },
-    };
-    let CURRENT_ROLE = localStorage.getItem('role') || null;
-
-    // ====== STATE ======
-    let FORM_ID_LINK = null; // para link a Submissions
-    let all = [];  // dataset completo
-    let view = []; // dataset visible
+    // ========= STATE =========
+    let FORM_ID_LINK = null;
+    let all = [];
+    let view = [];
     let sortKey = null, sortDir = 1;
 
-    // ====== HELPERS ======
     const $ = id => document.getElementById(id);
     const note = (msg,type='info')=>{ const n=$('note'); n.textContent=msg; n.className='note '+type; n.style.display='block'; setTimeout(()=>n.style.display='none',2200); };
     const cls = (estado)=>{ const n=(estado||'').toLowerCase();
@@ -187,30 +193,28 @@
     };
     function normalize(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
 
-    // ====== LOGIN UI ======
-    function requireLogin(){
-      if(!CURRENT_ROLE){ $('loginOverlay').style.display='flex'; }
-      else { $('userBadge').textContent = ROLES[CURRENT_ROLE]?.name || '—'; }
+    // ======== LOGIN ========
+    function showLogin(){ $('login').style.display='block'; $('app').style.display='none'; }
+    function hideLogin(){ $('login').style.display='none'; $('app').style.display='block'; }
+    function cancelLogin(){ $('pass').value=''; showLogin(); }
+    function doLogin(){
+      const p = $('pass').value.trim();
+      const okKey = Object.keys(ROLES).find(k=>ROLES[k].pass===p);
+      if(!okKey){ $('loginMsg').style.display='block'; return; }
+      CURRENT_ROLE_KEY = okKey;
+      localStorage.setItem('role_key', CURRENT_ROLE_KEY);
+      $('userBadge').textContent = ROLES[CURRENT_ROLE_KEY].name;
+      $('loginMsg').style.display='none';
+      $('pass').value='';
+      hideLogin();
+      bootAfterLogin();
     }
-    $('btnLogin').onclick = ()=>{
-      const r = $('loginRole').value;
-      const p = $('loginPass').value.trim();
-      if(!ROLES[r]) return note('Rol inválido','error');
-      if(p!==ROLES[r].pass) return note('Contraseña incorrecta','error');
-      CURRENT_ROLE = r; localStorage.setItem('role', r);
-      $('userBadge').textContent = ROLES[r].name;
-      $('loginOverlay').style.display='none';
-      render(); // re-filtra si ya hay datos cargados
-    };
-    $('btnLogout').onclick = ()=>{
-      localStorage.removeItem('role');
-      CURRENT_ROLE = null;
-      $('loginOverlay').style.display='flex';
-      $('userBadge').textContent = '—';
-      render();
+    $('logout').onclick = ()=>{
+      localStorage.removeItem('role_key');
+      location.reload();
     };
 
-    // ====== META (formId para links) ======
+    // ======== META (formId para link de Submissions) ========
     async function loadFormId(){
       try{
         const r = await fetch('/api/jotform/meta');
@@ -219,7 +223,7 @@
       }catch(_){}
     }
 
-    // ====== SYNC (desde backend) ======
+    // ======== SYNC ========
     async function sync() {
       try{
         const r = await fetch('/api/jotform/list');
@@ -236,6 +240,7 @@
           const grado     = a['8']?.answer || '1';
           const doc       = a['7']?.answer || 'Sin documento';
 
+          // Estado JF: busca por etiqueta "Estado de Aprobación"
           let estadoJF = '';
           for(const k in a){
             const lbl = normalize(a[k]?.text||'');
@@ -252,7 +257,7 @@
           };
         });
 
-        // filtro de sedes en UI
+        // llenamos filtro de sedes
         const sedeSel = $('sedeF');
         sedeSel.innerHTML = '<option value="">Todas las Sedes</option>' + [...sedes].map(s=>`<option>${s}</option>`).join('');
 
@@ -264,34 +269,30 @@
       }
     }
 
-    // ====== ORDENAR ======
     function sortBy(k){
-      if(k==='') return;
       if(sortKey===k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
       render();
     }
 
-    // ====== RENDER (con restricción por rol) ======
     function render(){
       const sedeF = $('sedeF').value;
       const gradoF = $('gradoF').value;
       const estF = $('estadoF').value;
       const q = ($('busca').value||'').toLowerCase();
 
-      // Prefiltro por rol
+      // filtro por rol
+      const role = CURRENT_ROLE() || ROLES.admin;
       let base = [...all];
-      const role = CURRENT_ROLE ? ROLES[CURRENT_ROLE] : null;
-      if (role && !role.canAll) {
+      if (!role.canAll) {
         base = base.filter(s=>{
           const sedeOk  = !role.sede    || s.sede===role.sede;
           const jorOk   = !role.jornada || s.jornada===role.jornada;
-          return sedeOk && jorOk;
+          const gradoOk = !role.grados  || role.grados.includes(s.grado);
+          return sedeOk && jorOk && gradoOk;
         });
-      } else if (!role) {
-        base = []; // si no hay login, no mostramos nada
       }
 
-      // Filtros UI
+      // filtros UI
       view = base.filter(s=>{
         return (!sedeF || s.sede===sedeF) &&
                (!gradoF || s.grado===gradoF) &&
@@ -321,12 +322,9 @@
         const jfUrl = FORM_ID_LINK
           ? `https://www.jotform.com/submissions/${FORM_ID_LINK}?sid=${s.submissionId}&mode=full`
           : '#';
-        // Acceso de acción según rol: solo admin o quien coincide con filtro puede actuar
-        const canAct = !!(role && (role.canAll || !role.sede || s.sede===role.sede) && (!role.jornada || s.jornada===role.jornada));
-
         return `
         <tr>
-          <td><input type="checkbox" class="rowchk" data-id="${s.submissionId}" ${canAct?'':'disabled'}></td>
+          <td><input type="checkbox" class="rowchk" data-id="${s.submissionId}"></td>
           <td>${s.nombre}</td>
           <td>${s.documento}</td>
           <td>${s.grado}°</td>
@@ -337,11 +335,11 @@
             <span class="chip ${cls(s.estadoJF||'Pendiente')}">JF: ${s.estadoJF||'—'}</span>
           </td>
           <td class="actions">
-            ${canAct && (['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-ok" onclick="act(${i},'Aprobar')">✅</button>`:''}
-            ${canAct && (['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-bad" onclick="act(${i},'Rechazar')">❌</button>`:''}
-            ${canAct && (['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-doc" onclick="act(${i},'Solicitar Documentos')">📄</button>`:''}
-            ${canAct && (['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-lock" onclick="act(${i},'Bloqueado')">🔒</button>`:''}
-            ${canAct && (!['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-rev" onclick="reversar(${i})">↩</button>`:''}
+            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-ok" onclick="act(${i},'Aprobar')">✅</button>`:''}
+            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-bad" onclick="act(${i},'Rechazar')">❌</button>`:''}
+            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-doc" onclick="act(${i},'Solicitar Documentos')">📄</button>`:''}
+            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-lock" onclick="act(${i},'Bloqueado')">🔒</button>`:''}
+            ${(!['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-rev" onclick="reversar(${i})">↩</button>`:''}
             <button class="btn-info" onclick="ver(${i})">Ver</button>
             ${FORM_ID_LINK ? `<a class="btn-info" style="text-decoration:none;padding:10px" target="_blank" href="${jfUrl}">📬 JF</a>`:''}
           </td>
@@ -349,21 +347,25 @@
       }).join('');
     }
 
-    // ====== ACCIONES ======
     async function act(idx, nuevoEstado){
       const row = view[idx];
       const reg = all.find(x=>x.submissionId===row.submissionId);
       if(!reg) return;
 
-      const role = CURRENT_ROLE ? ROLES[CURRENT_ROLE] : null;
-      if (!(role && (role.canAll || !role.sede || reg.sede===role.sede) && (!role.jornada || reg.jornada===role.jornada))){
-        note('No tienes permiso para esta acción','error'); return;
+      // permiso por rol
+      const role = CURRENT_ROLE() || ROLES.admin;
+      if (!role.canAll) {
+        const sedeOk  = !role.sede    || reg.sede===role.sede;
+        const jorOk   = !role.jornada || reg.jornada===role.jornada;
+        const gradoOk = !role.grados  || role.grados.includes(reg.grado);
+        if(!(sedeOk && jorOk && gradoOk)){ note('No tienes permiso para esta acción','error'); return; }
       }
 
       if(ALLOWED_STATES.length && !ALLOWED_STATES.includes(nuevoEstado)){
         note(`"${nuevoEstado}" no coincide con las opciones`, 'error'); return;
       }
 
+      // UI optimista
       reg.estadoUI = nuevoEstado; render();
 
       try{
@@ -376,6 +378,7 @@
         console.error(e); note('No se pudo escribir en Jotform','error');
       }
     }
+
     function reversar(idx){
       const motivo = prompt('Motivo para reversar a Pendiente:');
       if(motivo===null) return;
@@ -388,7 +391,7 @@
       });
     }
 
-    // ====== PROXY UPDATE ======
+    // === Proxy update ===
     async function actualizarEstadoEnJotform(submissionId, nuevoEstado) {
       const payload = { submissionId, formId: 'env', value: nuevoEstado };
       const resp = await fetch('/api/jotform/update', {
@@ -397,11 +400,11 @@
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data?.error || 'Error actualizando en Jotform');
+      if (!resp.ok) throw new Error(data?.error || 'Error JF');
       return data.verified;
     }
 
-    // ====== CORREO ======
+    // === Emails ===
     async function enviarCorreoCambioEstado(registro, nuevoEstado){
       try{
         const a = registro.raw?.a || {};
@@ -431,11 +434,21 @@
       }catch(e){ console.warn('No se pudo enviar correo:', e); }
     }
 
-    // ====== FICHA (modal) + TODOS LOS ADJUNTOS ======
+    // === Adjuntos: convierte answer a array de URLs ===
+    function listUrls(ans){
+      if(!ans) return [];
+      if(Array.isArray(ans)) return ans;
+      if(typeof ans === 'string'){
+        // separador por coma o salto de línea
+        return ans.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+      }
+      return [];
+    }
+
+    // === Ficha ===
     function ver(idx){
       const s = view[idx];
       $('mTitle').textContent = s.nombre;
-
       const a = s.raw?.a || {};
       const get = (k, alt='—') => a[k]?.answer || a[k]?.prettyFormat || alt;
 
@@ -446,7 +459,7 @@
       const genero    = get('6','');
       const fnac      = get('10','');
       const edad      = get('11','');
-      const rh        = get('10',''); // ajusta si tienes un campo RH específico
+      const rh        = get('10','');
 
       const grado     = s.grado || '—';
       const sede      = s.sede  || '—';
@@ -477,24 +490,16 @@
       const disca     = get('47','Ninguna');
       const despl     = get('48','No');
 
-      const foto      = get('73','');
-      const boletin   = get('61','');
-      const docIdent  = get('62','');
+      const foto      = listUrls(get('73',''));
+      const boletin   = listUrls(get('61',''));
+      const docIdent  = listUrls(get('62',''));
       const obs       = get('64','');
 
-      // Detectar TODOS los archivos
-      const archivos = [];
-      for(const k in a){
-        const ans = a[k]?.answer;
-        const text = a[k]?.text || '';
-        if(typeof ans==='string' && ans.startsWith('http')) archivos.push({label:text||`Archivo ${k}`, url:ans});
-        if(Array.isArray(ans)) ans.filter(u=>typeof u==='string' && u.startsWith('http'))
-          .forEach(u=>archivos.push({label:text||`Archivo ${k}`, url:u}));
-      }
+      const linkList = (arr,label)=> arr.length ? arr.map(u=>`<a target="_blank" href="${u}">📎 ${label}</a>`).join('<br>') : '—';
 
       $('mBody').innerHTML = `
         <div style="text-align:center;margin:8px 0 12px">
-          ${foto ? `<img src="${foto}" style="max-width:120px;border-radius:10px;border:3px solid #667eea">` : '📄'}
+          ${foto.length ? `<img src="${foto[0]}" style="max-width:120px;border-radius:10px;border:3px solid #667eea">` : '📄'}
         </div>
 
         <h2 style="text-align:center;margin:0 0 6px">${s.nombre}</h2>
@@ -553,4 +558,92 @@
             <div><b>Madre:</b> ${madreNom||'—'} <b>Cel:</b> ${madreCel||'—'}</div>
             <div><b>Padre:</b> ${padreNom||'—'} <b>Cel:</b> ${padreCel||'—'}</div>
           </div>
-       
+        </div>
+
+        <div style="background:#fce4ec;padding:14px;border-radius:10px;margin:10px 0">
+          <h3 style="margin:0 0 8px;color:#c2185b">🏥 MÉDICA / SOCIAL</h3>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <div><b>EPS/IPS:</b> ${eps||'—'}</div>
+            <div><b>Sisbén:</b> ${sisben||'—'}</div>
+            <div><b>Etnia:</b> ${etnia||'—'}</div>
+            <div><b>Discapacidad:</b> ${disca||'—'}</div>
+            <div><b>Desplazado:</b> ${despl||'—'}</div>
+          </div>
+        </div>
+
+        <div style="background:#fff9c4;padding:14px;border-radius:10px;margin:10px 0;border:2px solid #f9a825">
+          <h3 style="margin:0 0 8px;color:#f57c00">📎 DOCUMENTOS ADJUNTOS</h3>
+          <div style="margin:6px 0"><b>Foto(s):</b><br>${linkList(foto,'Foto')}</div>
+          <div style="margin:6px 0"><b>Boletín(es):</b><br>${linkList(boletin,'Boletín')}</div>
+          <div style="margin:6px 0"><b>Documento(s) de identidad:</b><br>${linkList(docIdent,'Documento')}</div>
+        </div>
+
+        ${obs ? `<div style="background:#e1f5fe;padding:14px;border-radius:10px;margin:10px 0">
+          <h3 style="margin:0 0 8px;color:#0277bd">📝 OBSERVACIONES</h3>${obs}
+        </div>` : ''}
+
+        <div style="text-align:center;margin-top:10px;color:#6b7280">
+          <b>ID de envío:</b> ${s.submissionId}
+        </div>
+      `;
+      $('modal').style.display='block';
+    }
+    $('mClose').onclick = ()=> $('modal').style.display='none';
+    window.onclick = e => { if(e.target===$('modal')) $('modal').style.display='none'; };
+
+    // === MASIVO ===
+    $('chkAll').onclick = (e)=> document.querySelectorAll('.rowchk').forEach(c=> c.checked = e.target.checked);
+    async function bulk(estado){
+      const ids = [...document.querySelectorAll('.rowchk:checked')].map(c=>c.dataset.id);
+      if(ids.length===0){ note('No hay seleccionados','error'); return; }
+      for(const id of ids){
+        const idx = view.findIndex(x=>x.submissionId===id);
+        if(idx>=0) await act(idx, estado);
+      }
+      note(`Listo: ${estado} (${ids.length})`,'success');
+    }
+
+    // === EXPORTAR EXCEL ===
+    function exportarExcel(){
+      if(view.length===0){ note('No hay datos','error'); return; }
+      const data = view.map(s=>({
+        Nombre: s.nombre,
+        Documento: s.documento,
+        Grado: s.grado,
+        Sede: s.sede,
+        Jornada: s.jornada,
+        Estado_UI: s.estadoUI,
+        Estado_JF: s.estadoJF || ''
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Estudiantes");
+      XLSX.writeFile(wb, "estudiantes.xlsx");
+    }
+
+    // === Listeners UI ===
+    $('busca').oninput  = render;
+    $('sedeF').onchange = render;
+    $('gradoF').onchange = render;
+    $('estadoF').onchange = render;
+    $('sync').onclick   = ()=>{ note('Sincronizando…','info'); sync(); };
+    $('bulkOk').onclick = ()=> bulk('Aprobar');
+    $('bulkBad').onclick = ()=> bulk('Rechazar');
+    $('bulkRev').onclick = ()=> bulk('Pendiente');
+    $('export').onclick = exportarExcel;
+
+    async function bootAfterLogin(){
+      $('userBadge').textContent = (CURRENT_ROLE()||ROLES.admin).name;
+      await loadFormId();
+      await sync();
+      setInterval(sync, 180000);
+    }
+
+    // Arranque
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      if(CURRENT_ROLE_KEY){ $('userBadge').textContent = ROLES[CURRENT_ROLE_KEY].name; hideLogin(); await bootAfterLogin(); }
+      else { showLogin(); }
+    });
+  </script>
+</body>
+</html>
