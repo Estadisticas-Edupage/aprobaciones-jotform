@@ -13,14 +13,13 @@
     .badge{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:999px;padding:6px 12px}
     .panel{background:#fff;border-radius:16px;margin:16px 0;padding:16px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    input,button,select{padding:10px;border-radius:10px;border:2px solid #e5e7eb;font-size:14px}
+    button,select,input{padding:10px;border-radius:10px;border:2px solid #e5e7eb;font-size:14px}
     button{background:#6970f6;color:#fff;border:none;cursor:pointer} button:hover{opacity:.9}
     .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
     .stat{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.06)}
     .stat .n{font-size:30px;font-weight:900;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     .table{overflow:auto;border-radius:16px}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:12px 14px;border-bottom:1px solid #f1f5f9}
+    table{width:100%;border-collapse:collapse} th,td{padding:12px 14px;border-bottom:1px solid #f1f5f9}
     th{background:#f8fafc;font-weight:700}
     .chip{display:inline-block;font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid #e5e7eb;margin-right:6px}
     .ok{background:#d4edda;color:#155724;border-color:#c3e6cb}
@@ -29,9 +28,14 @@
     .info{background:#e3f2fd;color:#1976d2;border-color:#bbdefb}
     .muted{background:#eee;color:#444;border-color:#ddd}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .btn-ok{background:#28a745} .btn-bad{background:#dc3545} .btn-doc{background:#ff9800} .btn-lock{background:#9e9e9e} .btn-rev{background:#6b7280}
+    .btn-ok{background:#28a745} .btn-bad{background:#dc3545} .btn-doc{background:#ff9800} .btn-lock{background:#9e9e9e} .btn-rev{background:#6b7280} .btn-info{background:#17a2b8}
     .note{position:fixed;right:20px;top:20px;padding:12px 16px;border-radius:10px;color:#fff;display:none;box-shadow:0 10px 20px rgba(0,0,0,.2);z-index:99}
     .note.success{background:#16a34a} .note.error{background:#dc2626} .note.info{background:#0284c7}
+    /* Modal */
+    .modal{display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:999}
+    .modal-card{background:#fff;border-radius:14px;max-width:800px;margin:40px auto;padding:18px 20px;max-height:85vh;overflow:auto}
+    .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .close{cursor:pointer;font-size:22px}
     @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:600px){.grid{grid-template-columns:1fr} th,td{font-size:12px;padding:9px}}
   </style>
@@ -44,16 +48,13 @@
         <div class="badge" id="userBadge">Operador</div>
       </div>
 
-      <!-- Config -->
+      <!-- Barra superior (sin API Key / Form ID visibles) -->
       <div class="panel">
         <div class="row">
-          <input id="apiKey" placeholder="API Key Jotform">
-          <input id="formId" placeholder="Form ID">
-          <button id="saveCfg">Guardar</button>
           <button id="sync">Sincronizar</button>
-          <button id="clearCache">Limpiar caché local</button>
+          <button id="export">Exportar CSV</button>
+          <small style="color:#6b7280">Este panel usa <b>proxy</b> y variables de servidor — nada sensible se expone en el navegador.</small>
         </div>
-        <small style="color:#6b7280">Producción: esta app actualiza <b>por proxy</b> para evitar CORS.</small>
       </div>
 
       <!-- Stats -->
@@ -69,9 +70,8 @@
         <div class="row">
           <select id="sedeF"><option value="">Todas las sedes</option></select>
           <select id="gradoF"><option value="">Todos los grados</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option></select>
-          <select id="estadoF"><option value="">Todos</option><option>Pendiente</option><option>En Progreso</option><option>Aprobado</option><option>Rechazado</option><option>Solicitar Documentos</option><option>Bloqueado</option></select>
+          <select id="estadoF"><option value="">Todos</option><option>Pendiente</option><option>En Progreso</option><option>Aprobar</option><option>Rechazar</option><option>Solicitar Documentos</option><option>Bloqueado</option></select>
           <input id="busca" placeholder="Buscar por nombre o documento">
-          <button id="export">Exportar CSV</button>
         </div>
       </div>
 
@@ -84,130 +84,98 @@
             <th>Estados</th><th>Acciones</th>
           </tr>
           </thead>
-          <tbody id="tbody"><tr><td colspan="7" style="text-align:center">Sin datos</td></tr></tbody>
+          <tbody id="tbody"><tr><td colspan="7" style="text-align:center">Cargando...</td></tr></tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal Ficha estudiante -->
+  <div class="modal" id="modal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="mTitle">Detalle del estudiante</h3>
+        <span class="close" id="mClose">×</span>
+      </div>
+      <div id="mBody"></div>
     </div>
   </div>
 
   <div id="note" class="note"></div>
 
   <script>
-    // ============ CONFIG ============
-    // Cambia estos dos si tu dominio/secreto son distintos en Vercel:
+    // ====== CONFIG ======
     const PROXY_URL   = 'https://aprobaciones-jotform.vercel.app/api/jotform/update';
-    const PROXY_TOKEN = '12345-seguro'; // debe coincidir con PROXY_SECRET de Vercel (si no lo usas, puedes quitar el header)
+    const PROXY_TOKEN = '12345-seguro'; // debe coincidir con PROXY_SECRET
+    const ALLOWED_STATES = ['Pendiente','Aprobar','Rechazar','Solicitar Documentos','Bloqueado','En Progreso'];
 
-    // Si tu campo en JF es Dropdown, estas deben ser las opciones exactas:
-    const ALLOWED_STATES = ['Pendiente','Aprobado','Rechazado','Solicitar Documentos','Bloqueado','En Progreso'];
+    // ====== STATE ======
+    let all = [];  // dataset completo
+    let view = []; // dataset filtrado
 
-    // ============ VARIABLES ============
-    let apiKey = localStorage.getItem('jf_api') || '';
-    let formId = localStorage.getItem('jf_form') || '';
-    let all = [];   // dataset completo
-    let view = [];  // dataset filtrado
-
-    // ============ HELPERS UI ============
+    // ====== HELPERS ======
     const $ = id => document.getElementById(id);
-    const note = (msg,type='info')=>{
-      const n = $('note'); n.textContent = msg; n.className='note '+type; n.style.display='block'; setTimeout(()=>n.style.display='none',2500);
-    };
-    const cls = (estado)=>{
-      const n = (estado||'').toLowerCase();
+    const note = (msg,type='info')=>{ const n=$('note'); n.textContent=msg; n.className='note '+type; n.style.display='block'; setTimeout(()=>n.style.display='none',2200); };
+    const cls = (estado)=>{ const n=(estado||'').toLowerCase();
       if(n.includes('aproba')) return 'ok';
-      if(n.includes('rechaza')) return 'bad';
+      if(n.includes('rechaz')) return 'bad';
       if(n.includes('progreso')) return 'info';
       if(n.includes('solicitar')) return 'warn';
       if(n.includes('bloque')) return 'muted';
       return 'warn';
     };
+    function normalize(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
 
-    // ============ CONFIG / STORAGE ============
-    $('apiKey').value = apiKey; $('formId').value = formId;
-    $('saveCfg').onclick = ()=>{
-      apiKey = $('apiKey').value.trim();
-      formId = $('formId').value.trim();
-      localStorage.setItem('jf_api', apiKey);
-      localStorage.setItem('jf_form', formId);
-      note('Configuración guardada','success');
-    };
-    $('clearCache').onclick = ()=>{
-      localStorage.removeItem('jotform_local_changes');
-      note('Caché local eliminada','success');
-    };
-
-    // ============ EXPORT ============
-    $('export').onclick = ()=>{
-      if(view.length===0){ note('No hay datos para exportar','error'); return; }
-      let csv = 'Nombre,Documento,Grado,Sede,Jornada,Estado (UI),Estado de aprobación (JF)\n';
-      view.forEach(s=>{
-        csv += `"${s.nombre}","${s.documento}","${s.grado}","${s.sede}","${s.jornada}","${s.estadoUI}","${s.estadoJF||''}"\n`;
-      });
-      const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob); const a = document.createElement('a');
-      a.href = url; a.download = 'estudiantes.csv'; a.click();
-    };
-
-    // ============ FILTROS ============
-    $('busca').oninput = render;
-    $('sedeF').onchange = render;
-    $('gradoF').onchange = render;
-    $('estadoF').onchange = render;
-
-    // ============ SYNC: Traer submissions ============
-    $('sync').onclick = async ()=>{
-      if(!apiKey || !formId){ note('Falta API Key y/o Form ID','error'); return; }
-      note('Sincronizando...','info');
-
-      // Traemos submissions (agregando workflow_status por si lo quieres mostrar)
-      const url = `https://api.jotform.com/form/${formId}/submissions?apiKey=${apiKey}&limit=200&addWorkflowStatus=1`;
+    // ====== SYNC (desde backend oculto) ======
+    async function sync() {
       try{
-        const r = await fetch(url);
+        const r = await fetch('/api/jotform/list'); // usa env vars en backend
         const data = await r.json();
-        if(!data?.content){ note('Sin envíos','error'); return; }
+        if(!data?.content){ $('tbody').innerHTML='<tr><td colspan="7" style="text-align:center">Sin datos</td></tr>'; return; }
 
         const sedes = new Set();
         all = data.content.map(sub=>{
-          const a = sub.answers || {};
+          const a = sub.answers||{};
           const nombres = a['4']?.answer || a['4']?.prettyFormat || '';
           const apellidos = a['5']?.answer || a['5']?.prettyFormat || '';
           const sede = a['2']?.answer || '—';
-          const estadoJF = (()=>{
-            // Intentamos encontrar respuesta del campo “Estado de aprobación”.
-            // Como el QID lo resuelve el backend, aquí buscamos un label aproximado para pintar;
-            // si no aparece, dejamos vacío y se actualizará al primer cambio exitoso.
-            for(const k in a){
-              const lbl = normalize(a[k]?.text || '');
-              if(lbl.includes('estado de aprobacion')) return a[k]?.answer || '';
-            }
-            return '';
-          })();
+          const jornada = a['3']?.answer || '—';
+          const grado = a['8']?.answer || '1';
+          const doc = a['7']?.answer || 'Sin documento';
+
+          // Intento de leer “Estado de Aprobación” si viene en answers
+          let estadoJF = '';
+          for(const k in a){
+            const lbl = normalize(a[k]?.text||'');
+            if(lbl.includes('estado de aprobacion')) { estadoJF = a[k]?.answer || ''; break; }
+          }
 
           sedes.add(sede);
           return {
             submissionId: sub.id,
             nombre: `${nombres} ${apellidos}`.trim() || 'Sin nombre',
-            documento: a['7']?.answer || 'Sin documento',
-            grado: a['8']?.answer || '1',
+            documento: doc,
+            grado,
             sede,
-            jornada: a['3']?.answer || '—',
+            jornada,
             estadoUI: estadoJF || 'Pendiente',
             estadoJF: estadoJF || '',
-            flowStatus: sub.workflow_status || '',
+            raw: {a, created_at: sub.created_at}
           };
         });
 
-        // Pintar sedes
+        // llenar filtro sedes
         const sedeSel = $('sedeF');
         sedeSel.innerHTML = '<option value="">Todas las sedes</option>' + [...sedes].map(s=>`<option>${s}</option>`).join('');
-        render();
-        note(`Cargados ${all.length} registros`,'success');
-      }catch(e){
-        console.error(e); note('No se pudo leer Jotform (revisa API Key / Form ID)','error');
-      }
-    };
 
-    // ============ RENDER ============
+        render();
+        note(`Sincronizado (${all.length})`,'success');
+      }catch(e){
+        console.error(e); note('No se pudo sincronizar','error');
+      }
+    }
+
+    // ====== RENDER ======
     function render(){
       const sede = $('sedeF').value;
       const grado = $('gradoF').value;
@@ -223,8 +191,8 @@
 
       $('stTotal').textContent = view.length;
       $('stPend').textContent  = view.filter(x=>x.estadoUI==='Pendiente' || x.estadoUI==='En Progreso').length;
-      $('stOk').textContent    = view.filter(x=>x.estadoUI==='Aprobado').length;
-      $('stBad').textContent   = view.filter(x=>x.estadoUI==='Rechazado').length;
+      $('stOk').textContent    = view.filter(x=>x.estadoUI==='Aprobar').length;
+      $('stBad').textContent   = view.filter(x=>x.estadoUI==='Rechazar').length;
 
       const tb = $('tbody');
       if(view.length===0){ tb.innerHTML = '<tr><td colspan="7" style="text-align:center">Sin resultados</td></tr>'; return; }
@@ -239,69 +207,98 @@
           <td>
             <span class="chip ${cls(s.estadoUI)}">UI: ${s.estadoUI||'—'}</span>
             <span class="chip ${cls(s.estadoJF||'Pendiente')}">JF: ${s.estadoJF||'—'}</span>
-            ${s.flowStatus ? `<span class="chip info">Flow: ${s.flowStatus}</span>`:''}
           </td>
           <td class="actions">
-            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-ok" onclick="act(${i},'Aprobado')">✅</button>`:''}
-            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-bad" onclick="act(${i},'Rechazado')">❌</button>`:''}
+            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-ok" onclick="act(${i},'Aprobar')">✅</button>`:''}
+            ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-bad" onclick="act(${i},'Rechazar')">❌</button>`:''}
             ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-doc" onclick="act(${i},'Solicitar Documentos')">📄</button>`:''}
             ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-lock" onclick="act(${i},'Bloqueado')">🔒</button>`:''}
-            ${(!['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-rev" onclick="reversar(${i})">↩ Reversar</button>`:''}
+            ${(!['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-rev" onclick="reversar(${i})">↩</button>`:''}
+            <button class="btn-info" onclick="ver(${i})">Ver</button>
           </td>
         </tr>
       `).join('');
     }
 
-    // ============ ACCIONES ============
+    // ====== ACCIONES ======
     async function act(idx, nuevoEstado){
       const row = view[idx];
       const reg = all.find(x=>x.submissionId===row.submissionId);
       if(!reg) return;
 
       if(ALLOWED_STATES.length && !ALLOWED_STATES.includes(nuevoEstado)){
-        note(`El valor "${nuevoEstado}" no coincide con las opciones del campo`, 'error'); return;
+        note(`"${nuevoEstado}" no coincide con las opciones`, 'error'); return;
       }
-
-      // 1) UI optimista
-      reg.estadoUI = nuevoEstado;
-      render();
+      // UI optimista
+      reg.estadoUI = nuevoEstado; render();
 
       try{
-        // 2) Actualiza en Jotform (el backend resuelve el QID de "Estado de aprobación")
         const verificado = await actualizarEstadoEnJotform(reg.submissionId, nuevoEstado);
-
-        // 3) Refresca chip JF con lo que quedó
         reg.estadoJF = verificado || nuevoEstado;
         render();
         note('Actualizado ✔','success');
       }catch(e){
-        console.error(e);
-        note('No se pudo escribir en Jotform','error');
+        console.error(e); note('No se pudo escribir en Jotform','error');
       }
     }
     function reversar(idx){ act(idx,'Pendiente'); }
 
-    // ============ LLAMADA AL PROXY ============
+    // ====== PROXY UPDATE ======
     async function actualizarEstadoEnJotform(submissionId, nuevoEstado) {
-      const fId = $('formId').value.trim();
-      const payload = { submissionId, formId: fId, value: nuevoEstado };
-
-      const resp = await fetch(PROXY_URL, {
+      const payload = { submissionId, formId: 'env', value: nuevoEstado }; // formId lo resuelve el backend con env
+      const resp = await fetch('/api/jotform/update', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Auth-Token': PROXY_TOKEN // si no usas PROXY_SECRET, puedes borrar este header
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': PROXY_TOKEN },
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
       console.log('Proxy →', resp.status, data);
       if (!resp.ok) throw new Error(data?.error || 'Error actualizando en Jotform');
-      return data.verified; // lo que realmente quedó en JF
+      return data.verified;
     }
 
-    // ============ UTILS ============
-    function normalize(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+    // ====== FICHA (modal) ======
+    function ver(idx){
+      const s = view[idx];
+      $('mTitle').textContent = s.nombre;
+      const a = s.raw?.a || {};
+      const cel = a['21']?.answer || a['29']?.answer || '';
+      const email = a['22']?.answer || a['38']?.answer || '';
+      const dir = a['12']?.answer || '';
+      const acud = a['35']?.answer || '';
+      const docAcud = a['36']?.answer || '';
+      const telAcud = a['37']?.answer || '';
+      $('mBody').innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+          <div><b>Documento:</b> ${s.documento}</div>
+          <div><b>Grado:</b> ${s.grado}°</div>
+          <div><b>Sede:</b> ${s.sede}</div>
+          <div><b>Jornada:</b> ${s.jornada}</div>
+          <div><b>Celular:</b> ${cel||'—'}</div>
+          <div><b>Email:</b> ${email||'—'}</div>
+          <div style="grid-column:1/3"><b>Dirección:</b> ${dir||'—'}</div>
+        </div>
+        <hr style="margin:14px 0">
+        <div><b>Acudiente:</b> ${acud||'—'} &nbsp; <b>Doc:</b> ${docAcud||'—'} &nbsp; <b>Tel:</b> ${telAcud||'—'}</div>
+        <div style="margin-top:10px;color:#6b7280"><b>ID de envío:</b> ${s.submissionId} &nbsp; | &nbsp; <b>Estado JF:</b> ${s.estadoJF||'—'}</div>
+      `;
+      $('modal').style.display='block';
+    }
+    $('mClose').onclick = ()=> $('modal').style.display='none';
+    window.onclick = e => { if(e.target===$('modal')) $('modal').style.display='none'; };
+
+    // ====== FILTROS/UI ======
+    $('busca').oninput = render; $('sedeF').onchange = render; $('gradoF').onchange = render; $('estadoF').onchange = render;
+    $('export').onclick = ()=>{
+      if(view.length===0){ note('No hay datos','error'); return; }
+      let csv='Nombre,Documento,Grado,Sede,Jornada,Estado (UI),Estado Aprobación (JF)\n';
+      view.forEach(s=>{csv+=`"${s.nombre}","${s.documento}","${s.grado}","${s.sede}","${s.jornada}","${s.estadoUI}","${s.estadoJF||''}"\n`;});
+      const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='estudiantes.csv'; a.click();
+    };
+    $('sync').onclick = ()=>{ note('Sincronizando...','info'); sync(); };
+
+    // ====== AUTO-SYNC AL ABRIR ======
+    document.addEventListener('DOMContentLoaded', sync);
   </script>
 </body>
 </html>
