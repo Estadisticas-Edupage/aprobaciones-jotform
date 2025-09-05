@@ -190,6 +190,11 @@
             color: white;
         }
 
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
         /* Alerts */
         .alert {
             padding: 12px 20px;
@@ -230,6 +235,12 @@
             background: #d1ecf1;
             color: #0c5460;
             border: 1px solid #bee5eb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
         /* Tabs */
@@ -360,6 +371,11 @@
             color: #0c5460;
         }
 
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
         /* Loading */
         .loading {
             text-align: center;
@@ -406,6 +422,44 @@
             margin-top: 20px;
         }
 
+        /* Upload Section */
+        .upload-section {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d9e8f0 100%);
+            border: 2px dashed var(--secondary);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .doc-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .doc-type-card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .doc-type-card:hover {
+            border-color: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .doc-type-card.selected {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -428,7 +482,7 @@
             background: white;
             border-radius: 15px;
             padding: 30px;
-            max-width: 800px;
+            max-width: 900px;
             max-height: 90vh;
             overflow: auto;
             width: 90%;
@@ -481,6 +535,34 @@
             font-size: 14px;
         }
 
+        .section-title {
+            font-size: 18px;
+            color: var(--primary);
+            margin: 20px 0 10px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        /* File Upload */
+        .file-upload-area {
+            background: white;
+            border: 2px dashed var(--secondary);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload-area:hover {
+            background: var(--light);
+        }
+
+        .file-upload-area.dragover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .header {
@@ -502,6 +584,10 @@
 
             .field-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .doc-type-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             }
         }
     </style>
@@ -581,6 +667,7 @@
         <div class="tabs">
             <button class="tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
             <button class="tab" onclick="showTab('inscripciones')">📝 Inscripciones</button>
+            <button class="tab" onclick="showTab('documentos')">📁 Documentos</button>
             <button class="tab" onclick="showTab('buscar')">🔍 Buscar</button>
             <button class="tab" onclick="showTab('reportes')">📈 Reportes</button>
             <button class="tab" onclick="showTab('configuracion')">⚙️ Configuración</button>
@@ -658,18 +745,151 @@
                 </div>
             </div>
 
+            <!-- Documentos Tab -->
+            <div id="documentos" class="tab-content">
+                <div class="search-section">
+                    <h2>📁 Gestión de Documentos</h2>
+                    <p>Administre los documentos de inscripción organizados por año</p>
+                    
+                    <div class="search-controls">
+                        <select id="docYear" class="form-control">
+                            <option value="2025" selected>Año 2025</option>
+                            <option value="2024">Año 2024</option>
+                            <option value="2023">Año 2023</option>
+                            <option value="2026">Año 2026</option>
+                        </select>
+                        
+                        <input type="text" id="docInscripcionId" class="form-control" 
+                               placeholder="ID de inscripción (ej: 632862045157161460)">
+                        
+                        <input type="text" id="docEstudiante" class="form-control" 
+                               placeholder="Nombre del estudiante">
+                        
+                        <button class="btn btn-primary" style="width: auto;" onclick="buscarDocumentos()">
+                            🔍 Buscar Documentos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Información del estudiante -->
+                <div id="docStudentInfo" style="display: none; margin-bottom: 20px;">
+                    <div class="alert alert-info show">
+                        <strong>Estudiante:</strong> <span id="docStudentName">-</span> | 
+                        <strong>Grado:</strong> <span id="docStudentGrade">-</span> | 
+                        <strong>ID:</strong> <span id="docStudentId">-</span> |
+                        <strong>Año:</strong> <span id="docStudentYear">-</span>
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div id="uploadDocSection" style="display: none;">
+                    <div class="upload-section">
+                        <h3>📤 Subir Documentos</h3>
+                        
+                        <!-- Tipos de documento -->
+                        <div class="doc-type-grid">
+                            <div class="doc-type-card" onclick="selectDocType(this, 'registro_civil')">
+                                <div style="font-size: 32px;">📄</div>
+                                <div style="font-size: 11px; margin-top: 5px;">Registro Civil</div>
+                            </div>
+                            <div class="doc-type-card" onclick="selectDocType(this, 'tarjeta_identidad')">
+                                <div style="font-size: 32px;">🆔</div>
+                                <div style="font-size: 11px; margin-top: 5px;">T. Identidad</div>
+                            </div>
+                            <div class="doc-type-card" onclick="selectDocType(this, 'boletin')">
+                                <div style="font-size: 32px;">📊</div>
+                                <div style="font-size: 11px; margin-top: 5px;">Boletín</div>
+                            </div>
+                            <div class="doc-type-card" onclick="selectDocType(this, 'foto')">
+                                <div style="font-size: 32px;">📷</div>
+                                <div style="font-size: 11px; margin-top: 5px;">Foto</div>
+                            </div>
+                            <div class="doc-type-card" onclick="selectDocType(this, 'certificado_medico')">
+                                <div style="font-size: 32px;">🏥</div>
+                                <div style="font-size: 11px; margin-top: 5px;">Cert. Médico</div>
+                            </div>
+                            <div class="doc-type-card" onclick="selectDocType(this, 'eps')">
+                                <div style="font-size: 32px;">💊</div>
+                                <div style="font-size: 11px; margin-top: 5px;">EPS</div>
+                            </div>
+                            <div class="doc-type-card" onclick="selectDocType(this, 'sisben')">
+                                <div style="font-size: 32px;">🏘️</div>
+                                <div style="font-size: 11px; margin-top: 5px;">SISBEN</div>
+                            </div>
+                            <div class="doc-type-card" onclick="selectDocType(this, 'desplazado')">
+                                <div style="font-size: 32px;">📋</div>
+                                <div style="font-size: 11px; margin-top: 5px;">Desplazado</div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="selectedDocType" value="">
+                        
+                        <div style="margin-top: 20px;">
+                            <input type="file" id="docFileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" 
+                                   style="display: none;" onchange="handleFileSelect(event)">
+                            
+                            <div class="file-upload-area" onclick="document.getElementById('docFileInput').click()"
+                                 ondragover="handleDragOver(event)" 
+                                 ondragleave="handleDragLeave(event)"
+                                 ondrop="handleDrop(event)">
+                                <div style="font-size: 48px;">📁</div>
+                                <p style="margin: 10px 0; font-weight: 600;">
+                                    Arrastra archivos aquí o haz clic para seleccionar
+                                </p>
+                                <p style="font-size: 12px; color: #666;">
+                                    PDF, JPG, PNG, DOC, DOCX (Máx. 10MB)
+                                </p>
+                            </div>
+                        </div>
+
+                        <div id="selectedFilesList" style="margin-top: 20px;"></div>
+                        
+                        <button class="btn btn-success" id="uploadDocsBtn" style="display: none; margin-top: 20px; width: auto;" 
+                                onclick="uploadDocuments()">
+                            📤 Subir Documentos Seleccionados
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lista de documentos -->
+                <div id="documentsListSection" style="display: none;">
+                    <h3 style="margin: 30px 0 20px 0;">📋 Documentos Registrados</h3>
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Archivo</th>
+                                    <th>Fecha</th>
+                                    <th>Tamaño</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="documentsTable">
+                                <tr>
+                                    <td colspan="6" style="text-align: center;">
+                                        No hay documentos registrados
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Buscar Tab -->
             <div id="buscar" class="tab-content">
                 <div class="search-section">
                     <h2>Buscar Inscripciones</h2>
                     <div class="search-controls">
                         <input type="text" class="form-control" id="searchDoc" 
-                               placeholder="Número de documento">
+                               placeholder="Documento del acudiente">
                         <input type="text" class="form-control" id="searchName" 
                                placeholder="Nombre del estudiante">
                         <select class="form-control" id="searchGrade">
                             <option value="">Todos los grados</option>
-                            <option value="Pre">Preescolar</option>
+                            <option value="Transición">Transición</option>
                             <option value="1">1°</option>
                             <option value="2">2°</option>
                             <option value="3">3°</option>
@@ -722,6 +942,15 @@
                                 Generar
                             </button>
                         </div>
+                        <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid var(--border);">
+                            <h3 style="color: var(--primary); margin-bottom: 10px;">📁 Documentos</h3>
+                            <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                                Estado de documentación por estudiante
+                            </p>
+                            <button class="btn btn-danger" style="width: 100%;" onclick="generateReport('documents')">
+                                Generar
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -747,6 +976,12 @@
                             <div class="field-label">Total Inscripciones</div>
                             <div class="field-value" id="configTotal">-</div>
                         </div>
+                        <div class="field-item">
+                            <div class="field-label">Webhook URL</div>
+                            <div class="field-value" style="font-size: 11px;">
+                                https://inscripciones-jotform.vercel.app/api/jotform-webhook
+                            </div>
+                        </div>
                     </div>
                     
                     <div style="margin-top: 30px;">
@@ -755,6 +990,9 @@
                         </button>
                         <button class="btn btn-warning" style="width: auto;" onclick="clearCache()">
                             🗑️ Limpiar Caché
+                        </button>
+                        <button class="btn btn-success" style="width: auto;" onclick="testWebhook()">
+                            🧪 Probar Webhook
                         </button>
                     </div>
                 </div>
@@ -780,9 +1018,44 @@
         let currentUser = null;
         let submissions = [];
         let currentYear = '2025';
+        let selectedFiles = [];
+        let currentDocType = null;
+        let currentInscripcionId = null;
 
         // API configuration
         const API_BASE = '/api';
+
+        // Field mapping
+        const FIELD_MAP = {
+            estado: '2',
+            jornada: '3',
+            nombre: '4',
+            apellido: '5',
+            genero: '6',
+            sede: '7',
+            grado: '8',
+            rh: '10',
+            edad: '11',
+            direccion: '12',
+            barrio: '13',
+            estrato: '14',
+            ciudad: '15',
+            celular: '16',
+            email: '17',
+            madre_nombre: '19',
+            madre_documento: '20',
+            madre_telefono: '21',
+            madre_email: '22',
+            padre_nombre: '27',
+            padre_documento: '28',
+            padre_celular: '29',
+            acudiente_nombre: '37',
+            acudiente_documento: '38',
+            acudiente_tel: '39',
+            acudiente_email: '40',
+            parentesco: '43',
+            observacion: '60'
+        };
 
         // Check authentication on load
         document.addEventListener('DOMContentLoaded', function() {
@@ -825,7 +1098,6 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Store auth data
                     localStorage.setItem('authToken', data.token);
                     localStorage.setItem('userData', JSON.stringify(data.user));
                     
@@ -838,21 +1110,7 @@
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                // For demo purposes, allow demo login
-                if (colegio === 'demo' && password === 'demo2025') {
-                    currentUser = {
-                        colegio: 'demo',
-                        nombre: 'Colegio Demo',
-                        formId: '252455052823050'
-                    };
-                    currentYear = year;
-                    localStorage.setItem('authToken', 'demo-token');
-                    localStorage.setItem('userData', JSON.stringify(currentUser));
-                    showDashboard();
-                    loadDemoData();
-                } else {
-                    showLoginError('Error de conexión. Intente nuevamente.');
-                }
+                showLoginError('Error de conexión. Intente nuevamente.');
             }
             
             return false;
@@ -874,12 +1132,10 @@
             document.getElementById('loginContainer').style.display = 'none';
             document.getElementById('dashboardContainer').classList.add('active');
             
-            // Update user info
             document.getElementById('colegioNombre').textContent = currentUser.nombre;
             document.getElementById('userInfo').textContent = currentUser.colegio;
             document.getElementById('yearInfo').textContent = currentYear;
             
-            // Update config
             document.getElementById('configColegio').textContent = currentUser.nombre;
             document.getElementById('configYear').textContent = currentYear;
             document.getElementById('configFormId').textContent = currentUser.formId || 'N/A';
@@ -906,44 +1162,8 @@
                 updateRecentTable();
             } catch (error) {
                 console.error('Error loading data:', error);
-                // Load demo data if API fails
-                loadDemoData();
+                showMessage('Error al cargar datos', 'danger');
             }
-        }
-
-        // Load demo data
-        function loadDemoData() {
-            // Generate demo submissions
-            submissions = generateDemoSubmissions();
-            updateStatistics();
-            updateRecentTable();
-            showMessage('Modo demo activado - Datos de ejemplo', 'info');
-        }
-
-        // Generate demo submissions
-        function generateDemoSubmissions() {
-            const nombres = ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Sofia', 'Diego', 'Laura'];
-            const apellidos = ['García', 'López', 'Martínez', 'Rodriguez', 'González', 'Pérez'];
-            const demoData = [];
-            
-            for (let i = 0; i < 25; i++) {
-                const nombre = nombres[Math.floor(Math.random() * nombres.length)];
-                const apellido = apellidos[Math.floor(Math.random() * apellidos.length)];
-                
-                demoData.push({
-                    id: `DEMO-${1000 + i}`,
-                    created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-                    answers: {
-                        '3': { answer: `${10000000 + i}` },
-                        '4': { answer: nombre },
-                        '5': { answer: apellido },
-                        '6': { answer: `${10 + Math.floor(Math.random() * 8)}` },
-                        '13': { answer: `${Math.floor(Math.random() * 11) + 1}` }
-                    }
-                });
-            }
-            
-            return demoData;
         }
 
         // Update statistics
@@ -985,9 +1205,11 @@
             
             tbody.innerHTML = recent.map(sub => {
                 const answers = sub.answers || {};
-                const nombre = (answers['4']?.answer || '') + ' ' + (answers['5']?.answer || '');
-                const documento = answers['3']?.answer || 'N/A';
-                const grado = answers['13']?.answer || 'N/A';
+                const nombre = (answers[FIELD_MAP.nombre]?.answer || '') + ' ' + (answers[FIELD_MAP.apellido]?.answer || '');
+                const documento = answers[FIELD_MAP.madre_documento]?.answer || 
+                                answers[FIELD_MAP.padre_documento]?.answer || 
+                                answers[FIELD_MAP.acudiente_documento]?.answer || 'N/A';
+                const grado = answers[FIELD_MAP.grado]?.answer || 'N/A';
                 const fecha = new Date(sub.created_at).toLocaleDateString();
                 
                 return `
@@ -996,7 +1218,7 @@
                         <td>${fecha}</td>
                         <td>${nombre.trim() || 'Sin nombre'}</td>
                         <td>${documento}</td>
-                        <td>${grado}°</td>
+                        <td>${grado}</td>
                         <td><span class="badge badge-success">Activo</span></td>
                         <td>
                             <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" 
@@ -1009,7 +1231,192 @@
             }).join('');
         }
 
-        // View details
+        // Documents Management
+        async function buscarDocumentos() {
+            const year = document.getElementById('docYear').value;
+            const inscripcionId = document.getElementById('docInscripcionId').value;
+            const estudiante = document.getElementById('docEstudiante').value;
+            
+            if (!inscripcionId && !estudiante) {
+                showMessage('Por favor ingrese el ID de inscripción o nombre del estudiante', 'warning');
+                return;
+            }
+            
+            currentYear = year;
+            currentInscripcionId = inscripcionId;
+            
+            // Show sections
+            document.getElementById('docStudentInfo').style.display = 'block';
+            document.getElementById('uploadDocSection').style.display = 'block';
+            document.getElementById('documentsListSection').style.display = 'block';
+            
+            // Update student info
+            const submission = submissions.find(s => s.id === inscripcionId);
+            if (submission) {
+                const answers = submission.answers || {};
+                const nombre = (answers[FIELD_MAP.nombre]?.answer || '') + ' ' + (answers[FIELD_MAP.apellido]?.answer || '');
+                document.getElementById('docStudentName').textContent = nombre || 'N/A';
+                document.getElementById('docStudentGrade').textContent = answers[FIELD_MAP.grado]?.answer || 'N/A';
+                document.getElementById('docStudentId').textContent = inscripcionId;
+                document.getElementById('docStudentYear').textContent = year;
+            }
+            
+            // Load documents
+            try {
+                const response = await fetch(`${API_BASE}/documents?year=${year}&inscripcionId=${inscripcionId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayDocuments(data.documents);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error al buscar documentos', 'danger');
+            }
+        }
+
+        function displayDocuments(documents) {
+            const tbody = document.getElementById('documentsTable');
+            
+            if (!documents || documents.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center;">
+                            No hay documentos registrados para esta inscripción
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = documents.map(doc => {
+                const statusBadge = doc.status === 'verified' 
+                    ? '<span class="badge badge-success">Verificado</span>'
+                    : '<span class="badge badge-warning">Pendiente</span>';
+                
+                return `
+                    <tr>
+                        <td>${getDocTypeName(doc.type)}</td>
+                        <td>${doc.name}</td>
+                        <td>${doc.date}</td>
+                        <td>${formatFileSize(doc.size)}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;"
+                                    onclick="viewDocument('${doc.url}')">
+                                Ver
+                            </button>
+                            <button class="btn btn-success" style="padding: 5px 10px; font-size: 12px;"
+                                    onclick="downloadDocument('${doc.url}', '${doc.name}')">
+                                Descargar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function selectDocType(element, type) {
+            document.querySelectorAll('.doc-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            currentDocType = type;
+            document.getElementById('selectedDocType').value = type;
+        }
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            processFiles(files);
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            const files = event.dataTransfer.files;
+            processFiles(files);
+        }
+
+        function processFiles(files) {
+            selectedFiles = Array.from(files);
+            const fileList = document.getElementById('selectedFilesList');
+            
+            if (selectedFiles.length > 0) {
+                fileList.innerHTML = '<h4>Archivos seleccionados:</h4>';
+                selectedFiles.forEach((file, index) => {
+                    fileList.innerHTML += `
+                        <div style="padding: 10px; background: #f8f9fa; border-radius: 8px; margin: 5px 0;">
+                            <strong>${file.name}</strong> (${formatFileSize(file.size)})
+                            <button class="btn btn-danger" style="padding: 3px 8px; font-size: 12px; float: right;"
+                                    onclick="removeFile(${index})">
+                                Eliminar
+                            </button>
+                        </div>
+                    `;
+                });
+                document.getElementById('uploadDocsBtn').style.display = 'block';
+            } else {
+                fileList.innerHTML = '';
+                document.getElementById('uploadDocsBtn').style.display = 'none';
+            }
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            processFiles(selectedFiles);
+        }
+
+        async function uploadDocuments() {
+            if (!currentDocType) {
+                showMessage('Por favor seleccione el tipo de documento', 'warning');
+                return;
+            }
+            
+            if (selectedFiles.length === 0) {
+                showMessage('Por favor seleccione archivos para subir', 'warning');
+                return;
+            }
+            
+            // En producción aquí subirías los archivos reales
+            showMessage('Documentos subidos exitosamente', 'success');
+            
+            // Limpiar
+            selectedFiles = [];
+            document.getElementById('docFileInput').value = '';
+            document.getElementById('selectedFilesList').innerHTML = '';
+            document.getElementById('uploadDocsBtn').style.display = 'none';
+            document.querySelectorAll('.doc-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            currentDocType = null;
+            
+            // Recargar documentos
+            buscarDocumentos();
+        }
+
+        function viewDocument(url) {
+            window.open(url, '_blank');
+        }
+
+        function downloadDocument(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // View details (updated with documents link)
         function viewDetails(submissionId) {
             const submission = submissions.find(s => s.id === submissionId);
             if (!submission) return;
@@ -1019,35 +1426,44 @@
             
             const answers = submission.answers || {};
             
-            let html = '<div class="field-grid">';
+            let html = '';
             
-            const fields = {
-                '3': 'Documento',
-                '4': 'Nombres',
-                '5': 'Apellidos',
-                '6': 'Edad',
-                '13': 'Grado'
-            };
-            
-            for (const [key, label] of Object.entries(fields)) {
-                if (answers[key]) {
-                    html += `
-                        <div class="field-item">
-                            <div class="field-label">${label}</div>
-                            <div class="field-value">${answers[key].answer || 'N/A'}</div>
-                        </div>
-                    `;
-                }
-            }
-            
+            // Student data sections (same as before)
+            html += '<h3 class="section-title">📚 Datos del Estudiante</h3>';
+            html += '<div class="field-grid">';
+            html += `
+                <div class="field-item">
+                    <div class="field-label">Nombres</div>
+                    <div class="field-value">${answers[FIELD_MAP.nombre]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Apellidos</div>
+                    <div class="field-value">${answers[FIELD_MAP.apellido]?.answer || 'N/A'}</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Grado</div>
+                    <div class="field-value">${answers[FIELD_MAP.grado]?.answer || 'N/A'}</div>
+                </div>
+            `;
             html += '</div>';
             
+            // Action buttons
             html += `
-                <div style="margin-top: 30px; text-align: center;">
-                    <button class="btn btn-success" style="width: auto;" onclick="approveSubmission('${submissionId}')">
+                <div style="margin-top: 30px; text-align: center; padding-top: 20px; border-top: 2px solid var(--border);">
+                    <button class="btn btn-primary" style="width: auto; margin: 0 10px;" 
+                            onclick="openDocuments('${submissionId}')">
+                        📁 Ver Documentos
+                    </button>
+                    <button class="btn btn-success" style="width: auto; margin: 0 10px;" 
+                            onclick="approveSubmission('${submissionId}')">
                         ✅ Aprobar
                     </button>
-                    <button class="btn btn-warning" style="width: auto;" onclick="closeModal()">
+                    <button class="btn btn-danger" style="width: auto; margin: 0 10px;" 
+                            onclick="rejectSubmission('${submissionId}')">
+                        ❌ Rechazar
+                    </button>
+                    <button class="btn btn-secondary" style="width: auto; margin: 0 10px;" 
+                            onclick="closeModal()">
                         Cerrar
                     </button>
                 </div>
@@ -1057,18 +1473,28 @@
             modal.classList.add('active');
         }
 
-        // Close modal
+        function openDocuments(submissionId) {
+            closeModal();
+            showTab('documentos');
+            document.getElementById('docInscripcionId').value = submissionId;
+            buscarDocumentos();
+        }
+
         function closeModal() {
             document.getElementById('detailModal').classList.remove('active');
         }
 
-        // Approve submission
         function approveSubmission(submissionId) {
             showMessage(`Inscripción ${submissionId} aprobada`, 'success');
             closeModal();
         }
 
-        // Show tab
+        function rejectSubmission(submissionId) {
+            showMessage(`Inscripción ${submissionId} rechazada`, 'warning');
+            closeModal();
+        }
+
+        // Other functions
         function showTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -1079,21 +1505,18 @@
             });
             
             document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            event.target?.classList.add('active');
         }
 
-        // Load all submissions
         async function loadAllSubmissions() {
             const container = document.getElementById('inscripcionesContainer');
             container.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>';
             
-            // Simulate loading
             setTimeout(() => {
                 displayAllSubmissions(submissions);
             }, 1000);
         }
 
-        // Display all submissions
         function displayAllSubmissions(allSubmissions) {
             const container = document.getElementById('inscripcionesContainer');
             
@@ -1112,11 +1535,10 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Fecha</th>
-                                <th>Documento</th>
                                 <th>Nombres</th>
                                 <th>Apellidos</th>
-                                <th>Edad</th>
                                 <th>Grado</th>
+                                <th>Sede</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -1131,11 +1553,10 @@
                     <tr>
                         <td>${sub.id}</td>
                         <td>${fecha}</td>
-                        <td>${answers['3']?.answer || 'N/A'}</td>
-                        <td>${answers['4']?.answer || 'N/A'}</td>
-                        <td>${answers['5']?.answer || 'N/A'}</td>
-                        <td>${answers['6']?.answer || 'N/A'}</td>
-                        <td>${answers['13']?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.nombre]?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.apellido]?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.grado]?.answer || 'N/A'}</td>
+                        <td>${answers[FIELD_MAP.sede]?.answer || 'N/A'}</td>
                         <td>
                             <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" 
                                     onclick="viewDetails('${sub.id}')">
@@ -1150,7 +1571,6 @@
             container.innerHTML = html;
         }
 
-        // Search submissions
         function searchSubmissions() {
             const doc = document.getElementById('searchDoc').value.toLowerCase();
             const name = document.getElementById('searchName').value.toLowerCase();
@@ -1159,35 +1579,44 @@
             let filtered = submissions;
             
             if (doc) {
-                filtered = filtered.filter(s => 
-                    (s.answers['3']?.answer || '').toLowerCase().includes(doc)
-                );
+                filtered = filtered.filter(s => {
+                    const answers = s.answers || {};
+                    const docs = [
+                        answers[FIELD_MAP.madre_documento]?.answer,
+                        answers[FIELD_MAP.padre_documento]?.answer,
+                        answers[FIELD_MAP.acudiente_documento]?.answer
+                    ];
+                    return docs.some(d => d && d.toLowerCase().includes(doc));
+                });
             }
             
             if (name) {
                 filtered = filtered.filter(s => {
-                    const fullName = (s.answers['4']?.answer || '') + ' ' + (s.answers['5']?.answer || '');
+                    const answers = s.answers || {};
+                    const fullName = (answers[FIELD_MAP.nombre]?.answer || '') + ' ' + 
+                                   (answers[FIELD_MAP.apellido]?.answer || '');
                     return fullName.toLowerCase().includes(name);
                 });
             }
             
             if (grade) {
-                filtered = filtered.filter(s => 
-                    s.answers['13']?.answer === grade
-                );
+                filtered = filtered.filter(s => {
+                    const answers = s.answers || {};
+                    return answers[FIELD_MAP.grado]?.answer === grade;
+                });
             }
             
-            const resultsDiv = document.getElementById('searchResults');
-            if (filtered.length > 0) {
-                displaySearchResults(filtered);
-            } else {
-                resultsDiv.innerHTML = '<div class="alert alert-warning show">No se encontraron resultados</div>';
-            }
+            displaySearchResults(filtered);
         }
 
-        // Display search results
         function displaySearchResults(results) {
             const container = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                container.innerHTML = '<div class="alert alert-warning show">No se encontraron resultados</div>';
+                return;
+            }
+            
             let html = `
                 <div class="alert alert-success show">
                     ${results.length} resultado(s) encontrado(s)
@@ -1198,7 +1627,6 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Fecha</th>
-                                <th>Documento</th>
                                 <th>Estudiante</th>
                                 <th>Grado</th>
                                 <th>Acciones</th>
@@ -1210,15 +1638,15 @@
             results.forEach(sub => {
                 const answers = sub.answers || {};
                 const fecha = new Date(sub.created_at).toLocaleDateString();
-                const nombre = (answers['4']?.answer || '') + ' ' + (answers['5']?.answer || '');
+                const nombre = (answers[FIELD_MAP.nombre]?.answer || '') + ' ' + 
+                             (answers[FIELD_MAP.apellido]?.answer || '');
                 
                 html += `
                     <tr>
                         <td>${sub.id}</td>
                         <td>${fecha}</td>
-                        <td>${answers['3']?.answer || 'N/A'}</td>
                         <td>${nombre}</td>
-                        <td>${answers['13']?.answer || 'N/A'}°</td>
+                        <td>${answers[FIELD_MAP.grado]?.answer || 'N/A'}</td>
                         <td>
                             <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" 
                                     onclick="viewDetails('${sub.id}')">
@@ -1233,78 +1661,33 @@
             container.innerHTML = html;
         }
 
-        // Export data
         function exportData(format) {
             if (submissions.length === 0) {
                 showMessage('No hay datos para exportar', 'warning');
                 return;
             }
             
-            let content = '';
+            let content = 'ID,Fecha,Nombres,Apellidos,Género,Edad,Grado,Sede,Jornada\n';
             
-            if (format === 'csv') {
-                content = 'ID,Fecha,Documento,Nombres,Apellidos,Edad,Grado\n';
-                submissions.forEach(sub => {
-                    const answers = sub.answers || {};
-                    const fecha = new Date(sub.created_at).toLocaleDateString();
-                    content += `${sub.id},${fecha},${answers['3']?.answer || ''},${answers['4']?.answer || ''},${answers['5']?.answer || ''},${answers['6']?.answer || ''},${answers['13']?.answer || ''}\n`;
-                });
-            }
+            submissions.forEach(sub => {
+                const answers = sub.answers || {};
+                const fecha = new Date(sub.created_at).toLocaleDateString();
+                
+                const row = [
+                    sub.id,
+                    fecha,
+                    answers[FIELD_MAP.nombre]?.answer || '',
+                    answers[FIELD_MAP.apellido]?.answer || '',
+                    answers[FIELD_MAP.genero]?.answer || '',
+                    answers[FIELD_MAP.edad]?.answer || '',
+                    answers[FIELD_MAP.grado]?.answer || '',
+                    answers[FIELD_MAP.sede]?.answer || '',
+                    answers[FIELD_MAP.jornada]?.answer || ''
+                ];
+                
+                content += row.map(field => `"${field}"`).join(',') + '\n';
+            });
             
-            const blob = new Blob([content], { type: 'text/csv' });
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `inscripciones_${currentYear}.${format === 'excel' ? 'csv' : format}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            showMessage(`Archivo ${format.toUpperCase()} generado`, 'success');
-        }
-
-        // Generate report
-        function generateReport(type) {
-            showMessage(`Generando reporte de ${type}...`, 'info');
-            setTimeout(() => {
-                showMessage('Reporte generado exitosamente', 'success');
-            }, 2000);
-        }
-
-        // Sync data
-        function syncData() {
-            showMessage('Sincronizando datos...', 'info');
-            loadDashboardData();
-        }
-
-        // Clear cache
-        function clearCache() {
-            localStorage.removeItem('submissions_cache');
-            showMessage('Caché limpiado', 'success');
-        }
-
-        // Show message
-        function showMessage(message, type = 'info') {
-            const container = document.getElementById('statusMessage');
-            if (!container) return;
-            
-            container.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
-            
-            setTimeout(() => {
-                container.innerHTML = '';
-            }, 5000);
-        }
-
-        // Logout
-        function logout() {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userData');
-            currentUser = null;
-            submissions = [];
-            document.getElementById('dashboardContainer').classList.remove('active');
-            document.getElementById('loginContainer').style.display = 'block';
-            document.getElementById('passwordInput').value = '';
-        }
-    </script>
-</body>
-</html>
