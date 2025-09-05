@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Colegio Técnico Vicente Azuero – Aprobaciones</title>
   <style>
-    *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:22px;font-family:Segoe UI,Tahoma,Verdana,sans-serif}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:22px;font-family:Segoe UI,Tahoma,Verdana,sans-serif}
     .container{max-width:1200px;margin:0 auto}
     .card{background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.12);overflow:hidden}
-    .header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px}
+    .header{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:18px 22px;flex-wrap:wrap}
     .title{font-size:22px;font-weight:800}
     .badge{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:999px;padding:6px 12px}
     .panel{background:#fff;border-radius:16px;margin:12px 0;padding:14px 16px}
@@ -34,7 +35,7 @@
     .note.success{background:#16a34a} .note.error{background:#dc2626} .note.info{background:#0284c7}
     /* Modal */
     .modal{display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:999}
-    .modal-card{background:#fff;border-radius:14px;max-width:820px;margin:40px auto;padding:18px 20px;max-height:85vh;overflow:auto}
+    .modal-card{background:#fff;border-radius:14px;max-width:920px;margin:40px auto;padding:18px 20px;max-height:85vh;overflow:auto}
     .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
     .close{cursor:pointer;font-size:22px}
     @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
@@ -46,10 +47,16 @@
     <div class="card">
       <div class="header">
         <div class="title">🎓 Colegio Técnico Vicente Azuero – Aprobaciones</div>
-        <div class="badge" id="userBadge">Administrador</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="badge" id="userBadge">Rol</div>
+          <!-- Selector de rol (persistente en localStorage) -->
+          <select id="rolePicker" title="Rol">
+            <!-- opciones se llenan por JS -->
+          </select>
+        </div>
       </div>
 
-      <!-- Barra superior SIN API / ID -->
+      <!-- Barra superior -->
       <div class="panel">
         <div class="row">
           <button id="sync">🔄 Sincronizar</button>
@@ -120,14 +127,25 @@
 
   <script>
     // ====== CONFIG ======
-    // Debe coincidir con PROXY_SECRET en Vercel
+    // Debe ser el mismo valor que PROXY_SECRET en Vercel
     const PROXY_TOKEN = '12345-seguro';
     const ALLOWED_STATES = ['Pendiente','Aprobar','Rechazar','Solicitar Documentos','Bloqueado','En Progreso'];
 
+    // ====== ROLES ======
+    const ROLES = {
+      admin:           { name: 'Administrador', canAll: true },
+      coord_lagos2:    { name: 'Coord. Lagos 2',    sede: 'Colegio Tecnico Vicente Azuero - Lagos 2' },
+      coord_principal: { name: 'Coord. Principal',  sede: 'Colegio Tecnico Vicente Azuero - Principal' },
+      coord_manana:    { name: 'Coord. Mañana',     jornada: 'Mañana' },
+      coord_primaria:  { name: 'Coord. Primaria',   grados: ['1','2','3','4','5'] },
+      coord_secundaria:{ name: 'Coord. Secundaria', grados: ['6','7','8','9','10','11'] },
+    };
+    let CURRENT_ROLE = localStorage.getItem('role') || 'admin';
+
     // ====== STATE ======
-    let FORM_ID_LINK = null; // para armar link a JF
+    let FORM_ID_LINK = null; // para link a Jotform Submissions
     let all = [];  // dataset completo
-    let view = []; // dataset filtrado
+    let view = []; // dataset visible
     let sortKey = null, sortDir = 1;
 
     // ====== HELPERS ======
@@ -135,13 +153,21 @@
     const note = (msg,type='info')=>{ const n=$('note'); n.textContent=msg; n.className='note '+type; n.style.display='block'; setTimeout(()=>n.style.display='none',2200); };
     const cls = (estado)=>{ const n=(estado||'').toLowerCase();
       if(n.includes('aproba')) return 'ok';
-      if(n.includes('rechaz')) return 'bad';
+      if(n.includes('rechaz') || n.includes('no aprob')) return 'bad';
       if(n.includes('progreso')) return 'info';
       if(n.includes('solicitar')) return 'warn';
       if(n.includes('bloque')) return 'muted';
       return 'warn';
     };
     function normalize(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
+
+    // ====== ROLES UI ======
+    (function initRolesUI(){
+      const rp = $('rolePicker');
+      rp.innerHTML = Object.keys(ROLES).map(k=>`<option value="${k}" ${k===CURRENT_ROLE?'selected':''}>${ROLES[k].name}</option>`).join('');
+      rp.onchange = ()=>{ CURRENT_ROLE = rp.value; localStorage.setItem('role', CURRENT_ROLE); $('userBadge').textContent = ROLES[CURRENT_ROLE].name; render(); };
+      $('userBadge').textContent = ROLES[CURRENT_ROLE].name;
+    })();
 
     // ====== META (formId para links) ======
     async function loadFormId(){
@@ -186,7 +212,7 @@
           };
         });
 
-        // filtro de sedes
+        // filtro de sedes en UI
         const sedeSel = $('sedeF');
         sedeSel.innerHTML = '<option value="">Todas las Sedes</option>' + [...sedes].map(s=>`<option>${s}</option>`).join('');
 
@@ -207,15 +233,28 @@
 
     // ====== RENDER ======
     function render(){
-      const sede = $('sedeF').value;
-      const grado = $('gradoF').value;
-      const est = $('estadoF').value;
+      const sedeF = $('sedeF').value;
+      const gradoF = $('gradoF').value;
+      const estF = $('estadoF').value;
       const q = ($('busca').value||'').toLowerCase();
 
-      view = all.filter(s=>{
-        return (!sede || s.sede===sede) &&
-               (!grado || s.grado===grado) &&
-               (!est || s.estadoUI===est) &&
+      // Prefiltro por rol
+      const role = ROLES[CURRENT_ROLE] || ROLES.admin;
+      let base = [...all];
+      if (!role.canAll) {
+        base = base.filter(s=>{
+          const sedeOk  = !role.sede    || s.sede===role.sede;
+          const jorOk   = !role.jornada || s.jornada===role.jornada;
+          const gradoOk = !role.grados  || role.grados.includes(s.grado);
+          return sedeOk && jorOk && gradoOk;
+        });
+      }
+
+      // Filtros UI
+      view = base.filter(s=>{
+        return (!sedeF || s.sede===sedeF) &&
+               (!gradoF || s.grado===gradoF) &&
+               (!estF || s.estadoUI===estF) &&
                (!q || s.nombre.toLowerCase().includes(q) || (s.documento||'').includes(q));
       });
 
@@ -232,13 +271,16 @@
       $('stTotal').textContent = view.length;
       $('stPend').textContent  = view.filter(x=>x.estadoUI==='Pendiente' || x.estadoUI==='En Progreso').length;
       $('stOk').textContent    = view.filter(x=>x.estadoUI==='Aprobar').length;
-      $('stBad').textContent   = view.filter(x=>x.estadoUI==='Rechazar').length;
+      $('stBad').textContent   = view.filter(x=>x.estadoUI==='Rechazar' || x.estadoUI==='No Aprobado').length;
 
       const tb = $('tbody');
       if(view.length===0){ tb.innerHTML = '<tr><td colspan="8" style="text-align:center">Sin resultados</td></tr>'; return; }
 
       tb.innerHTML = view.map((s,i)=>{
-        const jfUrl = FORM_ID_LINK ? `https://www.jotform.com/inbox/${FORM_ID_LINK}/submission/${s.submissionId}` : '#';
+        // Link estable a SUBMISSIONS (no Inbox)
+        const jfUrl = FORM_ID_LINK
+          ? `https://www.jotform.com/submissions/${FORM_ID_LINK}?sid=${s.submissionId}&mode=full`
+          : '#';
         return `
         <tr>
           <td><input type="checkbox" class="rowchk" data-id="${s.submissionId}"></td>
@@ -270,6 +312,17 @@
       const reg = all.find(x=>x.submissionId===row.submissionId);
       if(!reg) return;
 
+      // Permiso por rol
+      const role = ROLES[CURRENT_ROLE] || ROLES.admin;
+      if (!role.canAll) {
+        const sedeOk  = !role.sede    || reg.sede===role.sede;
+        const jorOk   = !role.jornada || reg.jornada===role.jornada;
+        const gradoOk = !role.grados  || role.grados.includes(reg.grado);
+        if(!(sedeOk && jorOk && gradoOk)){
+          note('No tienes permiso para aprobar este estudiante','error'); return;
+        }
+      }
+
       if(ALLOWED_STATES.length && !ALLOWED_STATES.includes(nuevoEstado)){
         note(`"${nuevoEstado}" no coincide con las opciones`, 'error'); return;
       }
@@ -281,6 +334,7 @@
         const verificado = await actualizarEstadoEnJotform(reg.submissionId, nuevoEstado);
         reg.estadoJF = verificado || nuevoEstado;
         render();
+        await enviarCorreoCambioEstado(reg, nuevoEstado); // notificación
         note('Actualizado ✔','success');
       }catch(e){
         console.error(e); note('No se pudo escribir en Jotform','error');
@@ -313,30 +367,176 @@
       return data.verified;
     }
 
-    // ====== FICHA (modal) ======
+    // ====== CORREO (usa /api/notify/send) ======
+    async function enviarCorreoCambioEstado(registro, nuevoEstado){
+      try{
+        const a = registro.raw?.a || {};
+        const email = a['22']?.answer || a['38']?.answer || ''; // ajusta si usas otros IDs
+        if(!email) return;
+
+        const subject = {
+          'Aprobar': '✅ Inscripción aprobada',
+          'Rechazar': '❌ Inscripción no aprobada',
+          'Solicitar Documentos': '📄 Faltan documentos para tu inscripción',
+          'Bloqueado': '🔒 Inscripción bloqueada',
+          'Pendiente': '↩ Tu inscripción fue reversada a Pendiente'
+        }[nuevoEstado] || `Actualización de estado: ${nuevoEstado}`;
+
+        const html = `
+          <p>Hola ${registro.nombre},</p>
+          <p>Tu estado de inscripción cambió a: <b>${nuevoEstado}</b>.</p>
+          <p>Sede: ${registro.sede} — Jornada: ${registro.jornada} — Grado: ${registro.grado}°</p>
+          <p>Si tienes dudas, responde a este correo.</p>
+        `;
+
+        await fetch('/api/notify/send', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'X-Auth-Token': PROXY_TOKEN },
+          body: JSON.stringify({ to: email, subject, html })
+        });
+      }catch(e){ console.warn('No se pudo enviar correo:', e); }
+    }
+
+    // ====== FICHA (modal) COMPLETA ======
     function ver(idx){
       const s = view[idx];
       $('mTitle').textContent = s.nombre;
+
       const a = s.raw?.a || {};
-      const cel = a['21']?.answer || a['29']?.answer || '';
-      const email = a['22']?.answer || a['38']?.answer || '';
-      const dir = a['12']?.answer || '';
-      const acud = a['35']?.answer || '';
-      const docAcud = a['36']?.answer || '';
-      const telAcud = a['37']?.answer || '';
+      const get = (k, alt='—') => a[k]?.answer || a[k]?.prettyFormat || alt;
+
+      // Ajusta IDs a tu form si algo no cuadra:
+      const nombres   = get('4','');
+      const apellidos = get('5','');
+      const tipoDoc   = get('98','');
+      const doc       = s.documento || '—';
+      const genero    = get('6','');
+      const fnac      = get('10','');
+      const edad      = get('11','');
+      const rh        = get('10',''); // cambia si tienes un campo específico de RH
+
+      const grado     = s.grado || '—';
+      const sede      = s.sede  || '—';
+      const jornada   = s.jornada || '—';
+      const idUnico   = get('96','No asignado');
+
+      const email     = get('22', get('17',''));
+      const cel       = get('21', get('29',''));
+      const dir       = get('12','');
+      const barrio    = get('13','');
+      const ciudad    = get('15','');
+      const estrato   = get('14','');
+
+      const acudiente = get('35','');
+      const docAcud   = get('36','');
+      const telAcud   = get('37','');
+      const emailAcud = get('38','');
+      const parentesc = get('42','');
+
+      const madreNom  = get('19','');
+      const madreCel  = get('21','');
+      const padreNom  = get('27','');
+      const padreCel  = get('29','');
+
+      const eps       = get('44','');
+      const sisben    = get('45','');
+      const etnia     = get('46','');
+      const disca     = get('47','Ninguna');
+      const despl     = get('48','No');
+
+      const foto      = get('73','');
+      const boletin   = get('61','');
+      const docIdent  = get('62','');
+      const obs       = get('64','');
+
       $('mBody').innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
-          <div><b>Documento:</b> ${s.documento}</div>
-          <div><b>Grado:</b> ${s.grado}°</div>
-          <div><b>Sede:</b> ${s.sede}</div>
-          <div><b>Jornada:</b> ${s.jornada}</div>
-          <div><b>Celular:</b> ${cel||'—'}</div>
-          <div><b>Email:</b> ${email||'—'}</div>
-          <div style="grid-column:1/3"><b>Dirección:</b> ${dir||'—'}</div>
+        <div style="text-align:center;margin:8px 0 12px">
+          ${foto ? `<img src="${foto}" style="max-width:120px;border-radius:10px;border:3px solid #667eea">` : '📄'}
         </div>
-        <hr style="margin:14px 0">
-        <div><b>Acudiente:</b> ${acud||'—'} &nbsp; <b>Doc:</b> ${docAcud||'—'} &nbsp; <b>Tel:</b> ${telAcud||'—'}</div>
-        <div style="margin-top:10px;color:#6b7280"><b>ID de envío:</b> ${s.submissionId} &nbsp; | &nbsp; <b>Estado JF:</b> ${s.estadoJF||'—'}</div>
+
+        <h2 style="text-align:center;margin:0 0 6px">${s.nombre}</h2>
+        <div style="text-align:center;margin-bottom:14px">
+          <span class="chip ${cls(s.estadoUI)}" style="font-size:14px"> ${s.estadoUI}</span>
+        </div>
+
+        <div style="background:#f8f9fa;padding:14px;border-radius:10px;margin:10px 0">
+          <h3 style="margin:0 0 8px;color:#3f51b5">👤 DATOS PERSONALES</h3>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <div><b>Nombres:</b> ${nombres}</div>
+            <div><b>Apellidos:</b> ${apellidos}</div>
+            <div><b>Documento:</b> ${doc}</div>
+            <div><b>Tipo Doc:</b> ${tipoDoc||'—'}</div>
+            <div><b>Género:</b> ${genero||'—'}</div>
+            <div><b>Fecha Nacimiento:</b> ${fnac||'—'}</div>
+            <div><b>Edad:</b> ${edad||'—'}</div>
+            <div><b>RH:</b> ${rh||'—'}</div>
+            <div><b>Email:</b> ${email||'—'}</div>
+            <div><b>Celular:</b> ${cel||'—'}</div>
+          </div>
+        </div>
+
+        <div style="background:#e3f2fd;padding:14px;border-radius:10px;margin:10px 0">
+          <h3 style="margin:0 0 8px;color:#1976d2">🎓 INFORMACIÓN ACADÉMICA</h3>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <div><b>Grado a Inscribir:</b> ${grado}°</div>
+            <div><b>Sede:</b> ${sede}</div>
+            <div><b>Jornada:</b> ${jornada}</div>
+            <div><b>ID Único:</b> ${idUnico}</div>
+          </div>
+        </div>
+
+        <div style="background:#f3e5f5;padding:14px;border-radius:10px;margin:10px 0">
+          <h3 style="margin:0 0 8px;color:#7b1fa2">📞 INFORMACIÓN DE CONTACTO</h3>
+          <div><b>Dirección:</b> ${dir||'—'}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px">
+            <div><b>Barrio:</b> ${barrio||'—'}</div>
+            <div><b>Ciudad:</b> ${ciudad||'—'}</div>
+            <div><b>Estrato:</b> ${estrato||'—'}</div>
+          </div>
+        </div>
+
+        <div style="background:#e8f5e9;padding:14px;border-radius:10px;margin:10px 0">
+          <h3 style="margin:0 0 8px;color:#2e7d32">👨‍👩‍👧 ACUDIENTE</h3>
+          <div><b>Nombre:</b> ${acudiente||'—'}</div>
+          <div><b>Documento:</b> ${docAcud||'—'}</div>
+          <div><b>Tel:</b> ${telAcud||'—'}</div>
+          <div><b>Email:</b> ${emailAcud||'—'}</div>
+          <div><b>Parentesco:</b> ${parentesc||'—'}</div>
+        </div>
+
+        <div style="background:#fff3e0;padding:14px;border-radius:10px;margin:10px 0">
+          <h3 style="margin:0 0 8px;color:#e65100">👨‍👩‍👦 PADRES</h3>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+            <div><b>Madre:</b> ${madreNom||'—'} <b>Cel:</b> ${madreCel||'—'}</div>
+            <div><b>Padre:</b> ${padreNom||'—'} <b>Cel:</b> ${padreCel||'—'}</div>
+          </div>
+        </div>
+
+        <div style="background:#fce4ec;padding:14px;border-radius:10px;margin:10px 0">
+          <h3 style="margin:0 0 8px;color:#c2185b">🏥 MÉDICA / SOCIAL</h3>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <div><b>EPS/IPS:</b> ${eps||'—'}</div>
+            <div><b>Sisbén:</b> ${sisben||'—'}</div>
+            <div><b>Etnia:</b> ${etnia||'—'}</div>
+            <div><b>Discapacidad:</b> ${disca||'—'}</div>
+            <div><b>Desplazado:</b> ${despl||'—'}</div>
+          </div>
+        </div>
+
+        <div style="background:#fff9c4;padding:14px;border-radius:10px;margin:10px 0;border:2px solid #f9a825">
+          <h3 style="margin:0 0 8px;color:#f57c00">📎 DOCUMENTOS ADJUNTOS</h3>
+          <div style="margin:6px 0">📷 <b>Foto:</b> ${foto ? `<a target="_blank" href="${foto}">Abrir</a>` : '—'}</div>
+          <div style="margin:6px 0">📝 <b>Boletín:</b> ${boletin ? `<a target="_blank" href="${boletin}">Abrir</a>` : '—'}</div>
+          <div style="margin:6px 0">🆔 <b>Documento ID:</b> ${docIdent ? `<a target="_blank" href="${docIdent}">Abrir</a>` : '—'}</div>
+        </div>
+
+        ${obs ? `<div style="background:#e1f5fe;padding:14px;border-radius:10px;margin:10px 0">
+          <h3 style="margin:0 0 8px;color:#0277bd">📝 OBSERVACIONES</h3>${obs}
+        </div>` : ''}
+
+        <div style="text-align:center;margin-top:10px;color:#6b7280">
+          <b>ID de envío:</b> ${s.submissionId}
+        </div>
       `;
       $('modal').style.display='block';
     }
@@ -345,7 +545,6 @@
 
     // ====== MASIVO ======
     $('chkAll').onclick = (e)=> document.querySelectorAll('.rowchk').forEach(c=> c.checked = e.target.checked);
-
     async function bulk(estado){
       const ids = [...document.querySelectorAll('.rowchk:checked')].map(c=>c.dataset.id);
       if(ids.length===0){ note('No hay seleccionados','error'); return; }
@@ -371,7 +570,7 @@
     $('bulkBad').onclick = ()=> bulk('Rechazar');
     $('bulkRev').onclick = ()=> bulk('Pendiente');
 
-    // ====== AUTO-SYNC AL ABRIR + CADA 3 MIN ======
+    // ====== AUTO-SYNC ======
     document.addEventListener('DOMContentLoaded', async ()=>{
       await loadFormId();
       await sync();
