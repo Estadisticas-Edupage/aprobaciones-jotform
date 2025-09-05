@@ -1,0 +1,12 @@
+{
+  "name": "sistema-inscripciones",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de inscripciones con JotForm",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.0"
+  }
+}
