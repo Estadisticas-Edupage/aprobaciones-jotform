@@ -3,24 +3,25 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Inscripciones – Aprobaciones</title>
+  <title>Colegio Técnico Vicente Azuero – Aprobaciones</title>
   <style>
-    *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;font-family:Segoe UI,Tahoma,Verdana,sans-serif}
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:22px;font-family:Segoe UI,Tahoma,Verdana,sans-serif}
     .container{max-width:1200px;margin:0 auto}
     .card{background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.12);overflow:hidden}
-    .header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px}
+    .header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px}
     .title{font-size:22px;font-weight:800}
     .badge{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:999px;padding:6px 12px}
-    .panel{background:#fff;border-radius:16px;margin:16px 0;padding:16px}
+    .panel{background:#fff;border-radius:16px;margin:12px 0;padding:14px 16px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     button,select,input{padding:10px;border-radius:10px;border:2px solid #e5e7eb;font-size:14px}
-    button{background:#6970f6;color:#fff;border:none;cursor:pointer} button:hover{opacity:.9}
+    button{background:#6970f6;color:#fff;border:none;cursor:pointer} button:hover{opacity:.92}
     .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
     .stat{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.06)}
     .stat .n{font-size:30px;font-weight:900;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     .table{overflow:auto;border-radius:16px}
     table{width:100%;border-collapse:collapse} th,td{padding:12px 14px;border-bottom:1px solid #f1f5f9}
-    th{background:#f8fafc;font-weight:700}
+    th{background:#f8fafc;font-weight:700;cursor:pointer;user-select:none}
+    th.nosort{cursor:default}
     .chip{display:inline-block;font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid #e5e7eb;margin-right:6px}
     .ok{background:#d4edda;color:#155724;border-color:#c3e6cb}
     .warn{background:#fff3cd;color:#856404;border-color:#ffe69c}
@@ -33,7 +34,7 @@
     .note.success{background:#16a34a} .note.error{background:#dc2626} .note.info{background:#0284c7}
     /* Modal */
     .modal{display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:999}
-    .modal-card{background:#fff;border-radius:14px;max-width:800px;margin:40px auto;padding:18px 20px;max-height:85vh;overflow:auto}
+    .modal-card{background:#fff;border-radius:14px;max-width:820px;margin:40px auto;padding:18px 20px;max-height:85vh;overflow:auto}
     .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
     .close{cursor:pointer;font-size:22px}
     @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
@@ -44,34 +45,42 @@
   <div class="container">
     <div class="card">
       <div class="header">
-        <div class="title">🎓 Inscripciones – Aprobaciones</div>
-        <div class="badge" id="userBadge">Operador</div>
+        <div class="title">🎓 Colegio Técnico Vicente Azuero – Aprobaciones</div>
+        <div class="badge" id="userBadge">Administrador</div>
       </div>
 
-      <!-- Barra superior (sin API Key / Form ID visibles) -->
+      <!-- Barra superior SIN API / ID -->
       <div class="panel">
         <div class="row">
-          <button id="sync">Sincronizar</button>
-          <button id="export">Exportar CSV</button>
-          <small style="color:#6b7280">Este panel usa <b>proxy</b> y variables de servidor — nada sensible se expone en el navegador.</small>
+          <button id="sync">🔄 Sincronizar</button>
+          <button id="export">📊 Exportar CSV</button>
+          <button id="bulkOk" class="btn-ok">✅ Aprobar seleccionados</button>
+          <button id="bulkBad" class="btn-bad">❌ Rechazar seleccionados</button>
+          <button id="bulkRev" class="btn-rev">↩ Reversar seleccionados</button>
+          <small id="lastSync" style="color:#6b7280;margin-left:8px"></small>
         </div>
       </div>
 
       <!-- Stats -->
       <div class="grid">
-        <div class="stat"><div class="n" id="stTotal">0</div><div>Total</div></div>
-        <div class="stat"><div class="n" id="stPend">0</div><div>Pendientes</div></div>
-        <div class="stat"><div class="n" id="stOk">0</div><div>Aprobados</div></div>
-        <div class="stat"><div class="n" id="stBad">0</div><div>Rechazados</div></div>
+        <div class="stat"><div class="n" id="stTotal">0</div><div>TOTAL ESTUDIANTES</div></div>
+        <div class="stat"><div class="n" id="stPend">0</div><div>PENDIENTES</div></div>
+        <div class="stat"><div class="n" id="stOk">0</div><div>APROBADOS</div></div>
+        <div class="stat"><div class="n" id="stBad">0</div><div>RECHAZADOS</div></div>
       </div>
 
       <!-- Filtros -->
       <div class="panel">
         <div class="row">
-          <select id="sedeF"><option value="">Todas las sedes</option></select>
-          <select id="gradoF"><option value="">Todos los grados</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option></select>
-          <select id="estadoF"><option value="">Todos</option><option>Pendiente</option><option>En Progreso</option><option>Aprobar</option><option>Rechazar</option><option>Solicitar Documentos</option><option>Bloqueado</option></select>
-          <input id="busca" placeholder="Buscar por nombre o documento">
+          <select id="sedeF"><option value="">Todas las Sedes</option></select>
+          <select id="gradoF">
+            <option value="">Todos los Grados</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option>
+          </select>
+          <select id="estadoF">
+            <option value="">Todos los Estados</option>
+            <option>Pendiente</option><option>En Progreso</option><option>Aprobar</option><option>Rechazar</option><option>Solicitar Documentos</option><option>Bloqueado</option>
+          </select>
+          <input id="busca" placeholder="Buscar estudiante o documento…">
         </div>
       </div>
 
@@ -80,11 +89,17 @@
         <table>
           <thead>
           <tr>
-            <th>Nombre</th><th>Documento</th><th>Grado</th><th>Sede</th><th>Jornada</th>
-            <th>Estados</th><th>Acciones</th>
+            <th class="nosort"><input type="checkbox" id="chkAll"></th>
+            <th onclick="sortBy('nombre')">Nombre</th>
+            <th onclick="sortBy('documento')">Documento</th>
+            <th onclick="sortBy('grado')">Grado</th>
+            <th onclick="sortBy('sede')">Sede</th>
+            <th onclick="sortBy('jornada')">Jornada</th>
+            <th class="nosort">Estado</th>
+            <th class="nosort">Acciones</th>
           </tr>
           </thead>
-          <tbody id="tbody"><tr><td colspan="7" style="text-align:center">Cargando...</td></tr></tbody>
+          <tbody id="tbody"><tr><td colspan="8" style="text-align:center">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -105,13 +120,15 @@
 
   <script>
     // ====== CONFIG ======
-    const PROXY_URL   = 'https://aprobaciones-jotform.vercel.app/api/jotform/update';
-    const PROXY_TOKEN = '12345-seguro'; // debe coincidir con PROXY_SECRET
+    // Debe coincidir con PROXY_SECRET en Vercel
+    const PROXY_TOKEN = '12345-seguro';
     const ALLOWED_STATES = ['Pendiente','Aprobar','Rechazar','Solicitar Documentos','Bloqueado','En Progreso'];
 
     // ====== STATE ======
+    let FORM_ID_LINK = null; // para armar link a JF
     let all = [];  // dataset completo
     let view = []; // dataset filtrado
+    let sortKey = null, sortDir = 1;
 
     // ====== HELPERS ======
     const $ = id => document.getElementById(id);
@@ -126,53 +143,66 @@
     };
     function normalize(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
 
+    // ====== META (formId para links) ======
+    async function loadFormId(){
+      try{
+        const r = await fetch('/api/jotform/meta');
+        const j = await r.json();
+        if(j?.formId) FORM_ID_LINK = j.formId;
+      }catch(_){}
+    }
+
     // ====== SYNC (desde backend oculto) ======
     async function sync() {
       try{
-        const r = await fetch('/api/jotform/list'); // usa env vars en backend
+        const r = await fetch('/api/jotform/list');
         const data = await r.json();
-        if(!data?.content){ $('tbody').innerHTML='<tr><td colspan="7" style="text-align:center">Sin datos</td></tr>'; return; }
+        if(!data?.content){ $('tbody').innerHTML='<tr><td colspan="8" style="text-align:center">Sin datos</td></tr>'; return; }
 
         const sedes = new Set();
-        all = data.content.map(sub=>{
+        all = data.content.map((sub)=>{
           const a = sub.answers||{};
-          const nombres = a['4']?.answer || a['4']?.prettyFormat || '';
+          const nombres   = a['4']?.answer || a['4']?.prettyFormat || '';
           const apellidos = a['5']?.answer || a['5']?.prettyFormat || '';
-          const sede = a['2']?.answer || '—';
-          const jornada = a['3']?.answer || '—';
-          const grado = a['8']?.answer || '1';
-          const doc = a['7']?.answer || 'Sin documento';
+          const sede      = a['2']?.answer || '—';
+          const jornada   = a['3']?.answer || '—';
+          const grado     = a['8']?.answer || '1';
+          const doc       = a['7']?.answer || 'Sin documento';
 
-          // Intento de leer “Estado de Aprobación” si viene en answers
+          // Leer “Estado de Aprobación”
           let estadoJF = '';
           for(const k in a){
             const lbl = normalize(a[k]?.text||'');
             if(lbl.includes('estado de aprobacion')) { estadoJF = a[k]?.answer || ''; break; }
           }
-
           sedes.add(sede);
           return {
             submissionId: sub.id,
             nombre: `${nombres} ${apellidos}`.trim() || 'Sin nombre',
-            documento: doc,
-            grado,
-            sede,
-            jornada,
+            documento: doc, grado, sede, jornada,
             estadoUI: estadoJF || 'Pendiente',
             estadoJF: estadoJF || '',
             raw: {a, created_at: sub.created_at}
           };
         });
 
-        // llenar filtro sedes
+        // filtro de sedes
         const sedeSel = $('sedeF');
-        sedeSel.innerHTML = '<option value="">Todas las sedes</option>' + [...sedes].map(s=>`<option>${s}</option>`).join('');
+        sedeSel.innerHTML = '<option value="">Todas las Sedes</option>' + [...sedes].map(s=>`<option>${s}</option>`).join('');
 
+        $('lastSync').textContent = 'Última sincronización: ' + new Date().toLocaleString('es-CO');
         render();
         note(`Sincronizado (${all.length})`,'success');
       }catch(e){
         console.error(e); note('No se pudo sincronizar','error');
       }
+    }
+
+    // ====== ORDENAR ======
+    function sortBy(k){
+      if(k==='') return;
+      if(sortKey===k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
+      render();
     }
 
     // ====== RENDER ======
@@ -189,16 +219,29 @@
                (!q || s.nombre.toLowerCase().includes(q) || (s.documento||'').includes(q));
       });
 
+      if(sortKey){
+        view.sort((a,b)=>{
+          const va = (a[sortKey]||'').toString().toLowerCase();
+          const vb = (b[sortKey]||'').toString().toLowerCase();
+          if(va<vb) return -1*sortDir;
+          if(va>vb) return  1*sortDir;
+          return 0;
+        });
+      }
+
       $('stTotal').textContent = view.length;
       $('stPend').textContent  = view.filter(x=>x.estadoUI==='Pendiente' || x.estadoUI==='En Progreso').length;
       $('stOk').textContent    = view.filter(x=>x.estadoUI==='Aprobar').length;
       $('stBad').textContent   = view.filter(x=>x.estadoUI==='Rechazar').length;
 
       const tb = $('tbody');
-      if(view.length===0){ tb.innerHTML = '<tr><td colspan="7" style="text-align:center">Sin resultados</td></tr>'; return; }
+      if(view.length===0){ tb.innerHTML = '<tr><td colspan="8" style="text-align:center">Sin resultados</td></tr>'; return; }
 
-      tb.innerHTML = view.map((s,i)=>`
+      tb.innerHTML = view.map((s,i)=>{
+        const jfUrl = FORM_ID_LINK ? `https://www.jotform.com/inbox/${FORM_ID_LINK}/submission/${s.submissionId}` : '#';
+        return `
         <tr>
+          <td><input type="checkbox" class="rowchk" data-id="${s.submissionId}"></td>
           <td>${s.nombre}</td>
           <td>${s.documento}</td>
           <td>${s.grado}°</td>
@@ -215,9 +258,10 @@
             ${(['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-lock" onclick="act(${i},'Bloqueado')">🔒</button>`:''}
             ${(!['Pendiente','En Progreso'].includes(s.estadoUI))? `<button class="btn-rev" onclick="reversar(${i})">↩</button>`:''}
             <button class="btn-info" onclick="ver(${i})">Ver</button>
+            ${FORM_ID_LINK ? `<a class="btn-info" style="text-decoration:none;padding:10px" target="_blank" href="${jfUrl}">📬 JF</a>`:''}
           </td>
-        </tr>
-      `).join('');
+        </tr>`;
+      }).join('');
     }
 
     // ====== ACCIONES ======
@@ -229,6 +273,7 @@
       if(ALLOWED_STATES.length && !ALLOWED_STATES.includes(nuevoEstado)){
         note(`"${nuevoEstado}" no coincide con las opciones`, 'error'); return;
       }
+
       // UI optimista
       reg.estadoUI = nuevoEstado; render();
 
@@ -241,11 +286,22 @@
         console.error(e); note('No se pudo escribir en Jotform','error');
       }
     }
-    function reversar(idx){ act(idx,'Pendiente'); }
+
+    function reversar(idx){
+      const motivo = prompt('Motivo para reversar a Pendiente:');
+      if(motivo===null) return;
+      act(idx,'Pendiente').then(()=>{
+        const row = view[idx];
+        const log = JSON.parse(localStorage.getItem('audit_log')||'[]');
+        log.push({ submissionId: row.submissionId, accion: 'Reversar', motivo, fecha: new Date().toISOString() });
+        localStorage.setItem('audit_log', JSON.stringify(log));
+        note('Reversado con motivo guardado','success');
+      });
+    }
 
     // ====== PROXY UPDATE ======
     async function actualizarEstadoEnJotform(submissionId, nuevoEstado) {
-      const payload = { submissionId, formId: 'env', value: nuevoEstado }; // formId lo resuelve el backend con env
+      const payload = { submissionId, formId: 'env', value: nuevoEstado };
       const resp = await fetch('/api/jotform/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Auth-Token': PROXY_TOKEN },
@@ -287,18 +343,40 @@
     $('mClose').onclick = ()=> $('modal').style.display='none';
     window.onclick = e => { if(e.target===$('modal')) $('modal').style.display='none'; };
 
-    // ====== FILTROS/UI ======
-    $('busca').oninput = render; $('sedeF').onchange = render; $('gradoF').onchange = render; $('estadoF').onchange = render;
+    // ====== MASIVO ======
+    $('chkAll').onclick = (e)=> document.querySelectorAll('.rowchk').forEach(c=> c.checked = e.target.checked);
+
+    async function bulk(estado){
+      const ids = [...document.querySelectorAll('.rowchk:checked')].map(c=>c.dataset.id);
+      if(ids.length===0){ note('No hay seleccionados','error'); return; }
+      for(const id of ids){
+        const idx = view.findIndex(x=>x.submissionId===id);
+        if(idx>=0) await act(idx, estado);
+      }
+      note(`Listo: ${estado} (${ids.length})`,'success');
+    }
+
+    // ====== EXPORT ======
     $('export').onclick = ()=>{
       if(view.length===0){ note('No hay datos','error'); return; }
-      let csv='Nombre,Documento,Grado,Sede,Jornada,Estado (UI),Estado Aprobación (JF)\n';
+      let csv='Nombre,Documento,Grado,Sede,Jornada,Estado(UI),Estado(JF)\n';
       view.forEach(s=>{csv+=`"${s.nombre}","${s.documento}","${s.grado}","${s.sede}","${s.jornada}","${s.estadoUI}","${s.estadoJF||''}"\n`;});
       const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='estudiantes.csv'; a.click();
     };
-    $('sync').onclick = ()=>{ note('Sincronizando...','info'); sync(); };
 
-    // ====== AUTO-SYNC AL ABRIR ======
-    document.addEventListener('DOMContentLoaded', sync);
+    // ====== LISTENERS ======
+    $('busca').oninput = render; $('sedeF').onchange = render; $('gradoF').onchange = render; $('estadoF').onchange = render;
+    $('sync').onclick = ()=>{ note('Sincronizando…','info'); sync(); };
+    $('bulkOk').onclick = ()=> bulk('Aprobar');
+    $('bulkBad').onclick = ()=> bulk('Rechazar');
+    $('bulkRev').onclick = ()=> bulk('Pendiente');
+
+    // ====== AUTO-SYNC AL ABRIR + CADA 3 MIN ======
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      await loadFormId();
+      await sync();
+      setInterval(sync, 180000); // 3 minutos
+    });
   </script>
 </body>
 </html>
